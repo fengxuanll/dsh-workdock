@@ -1,0 +1,8 @@
+.reference/
+.asar-index.json
+.harness-reference/
+node_modules/
+*.tgz
+dist/
+.npm-cache/
+.build-tools/
