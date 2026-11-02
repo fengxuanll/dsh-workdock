@@ -1,6 +1,6 @@
 {
   "name": "dsh-project-manager",
-  "version": "0.1.4",
+  "version": "0.1.8",
   "description": "多目录项目管理与主要工作目录绑定",
   "type": "module",
   "license": "MIT",
@@ -13,6 +13,7 @@
   "files": [
     "index.js",
     "core.js",
+    "folder-opener.js",
     "client.js",
     "cordis.patch.yml",
     "locale",

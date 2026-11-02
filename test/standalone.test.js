@@ -14,6 +14,7 @@ test('release entry activates outside the workspace without node_modules or Harn
     const tools = [], commands = [], contexts = [], hooks = [];
     const disposers = [];
     await plugin.apply({
+      connection:{fetch:{register:()=>()=>{}}},agents:{get:()=>undefined},
       workspaceRegistry: { list: () => [], create: async () => { throw Error('Unexpected workspace creation'); } },
       storageDomain: { open: async spec => {
         assert.equal(spec.global.schema.safeParse(null).success, false);

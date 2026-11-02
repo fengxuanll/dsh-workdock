@@ -2,8 +2,9 @@ import { defineDomain } from '@deepseek-ai/dsh-storage-domain';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { z } from 'zod';
 import { ProjectManager, projectContext } from '../core.js';
+import { openDirectory } from '../folder-opener.js';
 
-export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry'];
+export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry', 'connection', 'agents'];
 const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), section: z.string(), revision: z.number() });
 const spec = defineDomain({ name: 'dsh_project_manager', version: 1, tables: {}, global: {
   schema: z.object({ projects: z.array(project), bindings: z.record(z.string(), z.string()) }),
@@ -49,7 +50,7 @@ export async function apply(ctx) {
     if (working.get(agent.session) !== project.primary) await working.set(agent, project.primary, signal);
   }
   async function operate(args, agent, signal) {
-    const result = await manager.execute(args, agent.session);
+    const result = await manager.execute(args, agent?.session ?? {header:{}});
     if (args.action !== 'list') await enforce(agent, signal);
     if (args.action === 'list' || args.action === 'save' || args.action === 'bind') {
       const syncWarnings = await syncWorkspaces();
@@ -60,10 +61,52 @@ export async function apply(ctx) {
     }
     return result;
   }
+  async function perform(args, agent, signal) {
+    if (args.action === 'open_folder') {
+      const workspace = ctx.workspaceRegistry.list().find(item => item.id === args.workspaceId);
+      if (!workspace) throw new Error('工作区不存在，请刷新项目树');
+      const projects = manager.snapshot().projects;
+      const project = projects.find(item => item.primary === workspace.path)
+        ?? projects.find(item => item.sessionRoots.includes(workspace.path));
+      const path = await manager.canonical(project?.primary ?? workspace.path);
+      await openDirectory(path);
+      return { path };
+    }
+    return operate(args, agent, signal);
+  }
+  const apiSchema = z.object({
+    sessionId:z.string().min(1).max(500).optional(),
+    args:z.object({
+      action:z.enum(['list','save','bind','remove','pin','section','open_folder']),
+      id:z.string().max(500).optional(),title:z.string().max(500).optional(),
+      folders:z.array(z.string().max(32768)).max(128).optional(),primary:z.string().max(32768).optional(),
+      revision:z.number().int().nonnegative().optional(),section:z.string().max(500).optional(),workspaceId:z.string().max(500).optional(),
+    }),
+  });
+  // Exact Fetch routes are admitted by Connection's authenticated owner-only
+  // transport. They do not execute Commands or append command/run|done events.
+  ctx.effect(()=>ctx.connection.fetch.register({
+    path:'/api/dsh-project-manager',methods:['POST'],requestBody:'buffered',
+    async fetch(request) {
+      const json=(status,value)=>Response.json(value,{status,headers:{'cache-control':'no-store'}});
+      try {
+        if(request.signal.aborted)return json(499,{ok:false,error:'请求已取消'});
+        const text=await request.text();
+        if(text.length>131072)return json(413,{ok:false,error:'项目配置过大'});
+        let payload;
+        try{payload=apiSchema.parse(JSON.parse(text));}catch{return json(400,{ok:false,error:'项目管理请求参数无效'});}
+        const agent=payload.sessionId?ctx.agents.get(payload.sessionId):undefined;
+        if(!agent && payload.args.action!=='list' && payload.args.action!=='open_folder')return json(409,{ok:false,error:'当前聊天尚未就绪，请打开聊天后重试'});
+        const value=await perform(payload.args,agent,request.signal);
+        return json(200,{ok:true,value});
+      }catch(error){return json(400,{ok:false,error:error.message});}
+    },
+  }));
+  // Explicitly typed slash commands retain their normal visible command result.
   ctx.commands.register({ name: 'projects', description: '管理多目录项目和主要目录', input: { hint: 'JSON 操作参数；留空查看项目' },
     async handler({ rawInput, agent, signal }) {
       try {
-        const value = await operate(rawInput.trim() ? JSON.parse(rawInput) : { action: 'list' }, agent, signal);
+        const value = await perform(rawInput.trim() ? JSON.parse(rawInput) : { action: 'list' }, agent, signal);
         return { kind: 'success', text: JSON.stringify(value) };
       } catch (error) { return { kind: 'error', text: error.message }; }
     }

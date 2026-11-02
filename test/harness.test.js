@@ -16,6 +16,7 @@ test('installed Harness APIs: activation, command, tool, context and actual writ
   const hooks=new Map();const cleanups=[];
   const workspaces=[];
   const ctx={
+    connection:{fetch:{register:()=>()=>{}}},agents:{get:()=>undefined},
     workspaceRegistry:{list:()=>workspaces,create:async(path,title)=>{
       const workspace={id:`w${workspaces.length}`,path,title,async setTitle(value){this.title=value;}};
       workspaces.push(workspace);return workspace;

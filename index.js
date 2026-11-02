@@ -22638,8 +22638,22 @@ function projectContext(project2) {
 Use the primary directory as the working directory for subsequent commands and relative file paths. Make project changes in the primary directory. Other source directories are references for reading; do not modify them. Do not change the working directory away from the project primary. Existing processes keep their own cwd; start a new process in the primary directory.`;
 }
 
+// folder-opener.js
+import { spawn } from "node:child_process";
+function openDirectory(path, platform = process.platform, launch = spawn) {
+  const command = platform === "win32" ? "explorer.exe" : platform === "darwin" ? "open" : "xdg-open";
+  return new Promise((resolve2, reject) => {
+    const child = launch(command, [path], { shell: false, detached: true, stdio: "ignore", windowsHide: false });
+    child.once("error", reject);
+    child.once("spawn", () => {
+      child.unref();
+      resolve2();
+    });
+  });
+}
+
 // src/index.js
-var inject = ["storageDomain", "commands", "tools", "systemPrompt", "workspaceRegistry"];
+var inject = ["storageDomain", "commands", "tools", "systemPrompt", "workspaceRegistry", "connection", "agents"];
 var project = external_exports.object({ id: external_exports.string(), title: external_exports.string(), folders: external_exports.array(external_exports.string()).min(1), primary: external_exports.string(), sessionRoots: external_exports.array(external_exports.string()), pinned: external_exports.boolean(), section: external_exports.string(), revision: external_exports.number() });
 var spec = defineDomain({ name: "dsh_project_manager", version: 1, tables: {}, global: {
   schema: external_exports.object({ projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()) }),
@@ -22679,7 +22693,7 @@ async function apply(ctx) {
     if (working.get(agent.session) !== project2.primary) await working.set(agent, project2.primary, signal);
   }
   async function operate(args, agent, signal) {
-    const result = await manager.execute(args, agent.session);
+    const result = await manager.execute(args, agent?.session ?? { header: {} });
     if (args.action !== "list") await enforce(agent, signal);
     if (args.action === "list" || args.action === "save" || args.action === "bind") {
       const syncWarnings = await syncWorkspaces();
@@ -22691,13 +22705,63 @@ ${syncWarnings.join("\n")}`);
     }
     return result;
   }
+  async function perform(args, agent, signal) {
+    if (args.action === "open_folder") {
+      const workspace = ctx.workspaceRegistry.list().find((item) => item.id === args.workspaceId);
+      if (!workspace) throw new Error("\u5DE5\u4F5C\u533A\u4E0D\u5B58\u5728\uFF0C\u8BF7\u5237\u65B0\u9879\u76EE\u6811");
+      const projects = manager.snapshot().projects;
+      const project2 = projects.find((item) => item.primary === workspace.path) ?? projects.find((item) => item.sessionRoots.includes(workspace.path));
+      const path = await manager.canonical(project2?.primary ?? workspace.path);
+      await openDirectory(path);
+      return { path };
+    }
+    return operate(args, agent, signal);
+  }
+  const apiSchema = external_exports.object({
+    sessionId: external_exports.string().min(1).max(500).optional(),
+    args: external_exports.object({
+      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "section", "open_folder"]),
+      id: external_exports.string().max(500).optional(),
+      title: external_exports.string().max(500).optional(),
+      folders: external_exports.array(external_exports.string().max(32768)).max(128).optional(),
+      primary: external_exports.string().max(32768).optional(),
+      revision: external_exports.number().int().nonnegative().optional(),
+      section: external_exports.string().max(500).optional(),
+      workspaceId: external_exports.string().max(500).optional()
+    })
+  });
+  ctx.effect(() => ctx.connection.fetch.register({
+    path: "/api/dsh-project-manager",
+    methods: ["POST"],
+    requestBody: "buffered",
+    async fetch(request) {
+      const json2 = (status, value) => Response.json(value, { status, headers: { "cache-control": "no-store" } });
+      try {
+        if (request.signal.aborted) return json2(499, { ok: false, error: "\u8BF7\u6C42\u5DF2\u53D6\u6D88" });
+        const text = await request.text();
+        if (text.length > 131072) return json2(413, { ok: false, error: "\u9879\u76EE\u914D\u7F6E\u8FC7\u5927" });
+        let payload;
+        try {
+          payload = apiSchema.parse(JSON.parse(text));
+        } catch {
+          return json2(400, { ok: false, error: "\u9879\u76EE\u7BA1\u7406\u8BF7\u6C42\u53C2\u6570\u65E0\u6548" });
+        }
+        const agent = payload.sessionId ? ctx.agents.get(payload.sessionId) : void 0;
+        if (!agent && payload.args.action !== "list" && payload.args.action !== "open_folder") return json2(409, { ok: false, error: "\u5F53\u524D\u804A\u5929\u5C1A\u672A\u5C31\u7EEA\uFF0C\u8BF7\u6253\u5F00\u804A\u5929\u540E\u91CD\u8BD5" });
+        const value = await perform(payload.args, agent, request.signal);
+        return json2(200, { ok: true, value });
+      } catch (error51) {
+        return json2(400, { ok: false, error: error51.message });
+      }
+    }
+  }));
   ctx.commands.register({
     name: "projects",
     description: "\u7BA1\u7406\u591A\u76EE\u5F55\u9879\u76EE\u548C\u4E3B\u8981\u76EE\u5F55",
     input: { hint: "JSON \u64CD\u4F5C\u53C2\u6570\uFF1B\u7559\u7A7A\u67E5\u770B\u9879\u76EE" },
     async handler({ rawInput, agent, signal }) {
       try {
-        const value = await operate(rawInput.trim() ? JSON.parse(rawInput) : { action: "list" }, agent, signal);
+        const value = await perform(rawInput.trim() ? JSON.parse(rawInput) : { action: "list" }, agent, signal);
         return { kind: "success", text: JSON.stringify(value) };
       } catch (error51) {
         return { kind: "error", text: error51.message };
