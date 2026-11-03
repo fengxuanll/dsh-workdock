@@ -1,4 +1,4 @@
 - insert:
-    - id: dsh-project-manager
-      name: dsh-project-manager
+    - id: dsh-workdock
+      name: dsh-workdock
       config: {}

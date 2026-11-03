@@ -1,6 +1,6 @@
-# DeepSeek Harness 项目管理插件
+# dsh-workdock
 
-适配并核对本机 DeepSeek Harness Desktop **0.2.1-rc.5** 的 Cordis 插件接口。
+DeepSeek Harness 多目录项目管理插件。适配并核对本机 DeepSeek Harness Desktop **0.2.1-rc.5** 的 Cordis 插件接口。
 
 ## 功能
 
@@ -20,19 +20,19 @@
 在 DeepSeek Harness 聊天中发送：
 
 ```text
-请使用 plugin_manager 安装本地 bundle：D:\Prog\dsh-workspace
+请使用 plugin_manager 安装本地 bundle：E:\Prog\dsh-workdock
 action 为 install_bundle，target 为上述完整目录。
 ```
 
 对应工具参数：
 
 ```json
-{"action":"install_bundle","target":"D:\\Prog\\dsh-workspace"}
+{"action":"install_bundle","target":"E:\\Prog\\dsh-workdock"}
 ```
 
 安装后检查工具返回的 `application` 和 `warnings`。如提示需要重启，重启 Harness。更新已安装的 JavaScript 后也应重启。插件需要当前 profile 提供 storageDomain、commands、tools、systemPrompt 服务，以及常规 Web/桌面界面组件。
 
-可分发包位于 `dist/dsh-project-manager-0.1.8.tgz`。本地安装优先使用上面的源码目录。
+可分发包位于 `dist/dsh-workdock-0.1.8.tgz`。本地安装优先使用上面的源码目录。
 
 ### 0.1.8 交互细节
 
@@ -42,7 +42,7 @@ action 为 install_bundle，target 为上述完整目录。
 
 ### 0.1.7 后台通信
 
-项目管理界面的读取、刷新、保存、绑定和打开文件夹改走 `/api/dsh-project-manager` 后台接口，不再通过 `/projects` 命令通信，因此不会再生成 `projects · {...}` 聊天记录。错误仍显示在管理窗口或菜单内。接口使用 Harness Connection 的认证及仅所有者可调用的 exact Fetch route，保留桌面转发和反向代理路径前缀。旧版已经写入聊天的历史记录保留。
+项目管理界面的读取、刷新、保存、绑定和打开文件夹改走 `/api/dsh-workdock` 后台接口，不再通过 `/projects` 命令通信，因此不会再生成 `projects · {...}` 聊天记录。错误仍显示在管理窗口或菜单内。接口使用 Harness Connection 的认证及仅所有者可调用的 exact Fetch route，保留桌面转发和反向代理路径前缀。旧版已经写入聊天的历史记录保留。
 
 手动输入 `/projects` 和模型主动调用 `project_manager` 时仍使用 Harness 的正常可见记录；后台界面操作不会调用它们。
 
@@ -82,14 +82,15 @@ action 为 install_bundle，target 为上述完整目录。
 
 0.1.0 在软链接本地安装时可能报 `Cannot find package '@deepseek-ai/dsh-storage-domain'`。0.1.1 已将 Host 所需依赖编译进 `index.js`，运行时无需从 Harness 安装目录或源码父目录查找依赖。
 
-如果当前安装是 `link:D:/Prog/dsh-workspace`，源码目录已包含修复后的入口：完整退出并重新打开 Harness，再启用项目管理插件即可。如果使用的是旧安装包，改用 0.1.1 安装包重新安装后重启。
+如果当前安装是 `link:E:/Prog/dsh-workdock`，源码目录已包含修复后的入口：完整退出并重新打开 Harness，再启用项目管理插件即可。如果使用的是旧安装包，改用 0.1.1 安装包重新安装后重启。
 
 ## 使用
 
-1. 打开一个聊天，点击侧栏底部的“项目管理”，或输入框下方的项目按钮。
+1. 打开一个聊天，点击输入框下方的项目按钮。左下角不再提供“项目管理”入口；项目行“…”菜单及右键编辑入口保留。
 2. 点击“添加项目”，输入名称，添加一个或多个源文件夹。
 3. 在目标目录行悬停，点击“设为主要目录”，再点击“保存”，会立即绑定当前聊天并应用主要目录。删除当前主要目录后，必须重新选择主要目录才能保存。
 4. 在项目间切换时点击“用于当前聊天”，或“新建聊天”。输入框下方会显示当前项目名称。
+   - 保存项目成功或编辑时点击“取消”均直接关闭整个窗口，不再返回项目管理列表；取消不保存更改，保存失败时保留编辑内容和错误提示，方便重试。
 5. 后续可通过“编辑项目”修改主要目录。已有聊天保留原始身份和历史记录，后续执行切换到新的主要目录。
 
 项目管理界面通过后台 Fetch API 读写。保存和绑定项目需要就绪的聊天，以便应用主要目录；读取接口也支持无聊天的请求。也可以手动使用 `/projects` 查看项目；模型可以使用 `project_manager` 工具执行同一套操作。

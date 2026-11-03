@@ -86,7 +86,7 @@ export async function apply(ctx) {
   // Exact Fetch routes are admitted by Connection's authenticated owner-only
   // transport. They do not execute Commands or append command/run|done events.
   ctx.effect(()=>ctx.connection.fetch.register({
-    path:'/api/dsh-project-manager',methods:['POST'],requestBody:'buffered',
+    path:'/api/dsh-workdock',methods:['POST'],requestBody:'buffered',
     async fetch(request) {
       const json=(status,value)=>Response.json(value,{status,headers:{'cache-control':'no-store'}});
       try {
@@ -124,7 +124,7 @@ export async function apply(ctx) {
       return { json: JSON.stringify(await operate(args, exec.agent, exec.signal)) };
     }
   }));
-  ctx.systemPrompt.context({ name: 'dsh-project-manager:project', order: 41, required: true, interpolate: false,
+  ctx.systemPrompt.context({ name: 'dsh-workdock:project', order: 41, required: true, interpolate: false,
     text(context) { const p = context.agent && manager.projectFor(context.agent.session); return p ? projectContext(p) : ''; }
   });
   ctx.on('system-prompt/assemble', async (_assembly, context, next) => { await enforce(context.agent, context.signal); return next(); }, { prepend: true });

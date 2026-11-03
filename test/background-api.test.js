@@ -23,8 +23,8 @@ test('background route reads and saves projects without executing commands or ap
       workspaceRegistry:{list:()=>workspaces,create:async(path,title)=>{const workspace={id:'native',path,title};workspaces.push(workspace);return workspace;}},
       commands:{register(){},execute(){assert.fail('background UI must not call commands.execute');}},tools:{register(){}},systemPrompt:{context(){}},on(){},effect:fn=>disposers.push(fn()),
     });
-    assert.equal(route.path,'/api/dsh-project-manager');assert.deepEqual(route.methods,['POST']);
-    const post=async payload=>route.fetch(new Request('https://host/api/dsh-project-manager',{method:'POST',body:JSON.stringify(payload)}));
+    assert.equal(route.path,'/api/dsh-workdock');assert.deepEqual(route.methods,['POST']);
+    const post=async payload=>route.fetch(new Request('https://host/api/dsh-workdock',{method:'POST',body:JSON.stringify(payload)}));
     assert.equal((await post({args:{action:'list'}})).status,200);
     const saved=await post({sessionId:'chat',args:{action:'save',title:'Quiet project',folders:[primary],primary}});
     assert.equal(saved.status,200);assert.equal(saved.headers.get('cache-control'),'no-store');
@@ -34,7 +34,7 @@ test('background route reads and saves projects without executing commands or ap
     assert.equal(listed.value.projects.length,1);
     assert.equal((await post({sessionId:'missing',args:{action:'bind',id:listed.value.projects[0].id}})).status,409);
     assert.equal((await post({args:{action:'unknown'}})).status,400);
-    const oversized=await route.fetch(new Request('https://host/api/dsh-project-manager',{method:'POST',body:'x'.repeat(131073)}));
+    const oversized=await route.fetch(new Request('https://host/api/dsh-workdock',{method:'POST',body:'x'.repeat(131073)}));
     assert.equal(oversized.status,413);
     await (await post({sessionId:'chat',args:{action:'remove',id:listed.value.projects[0].id}})).json();
     assert.equal(state.projects.length,0);
@@ -48,9 +48,9 @@ test('actual Harness Connection admits background routes only for the authentica
   const {HostConnectionService}=await import(connectionModule);
   let called=0;
   const handler=HostConnectionService.prototype.createSharedFetchHandler.call({
-    fetchRoutes:new Map([['/api/dsh-project-manager',{methods:new Set(['POST']),requestBody:'buffered',fetch:async()=>{called++;return Response.json({ok:true});}}]]),interceptors:new Map(),
+    fetchRoutes:new Map([['/api/dsh-workdock',{methods:new Set(['POST']),requestBody:'buffered',fetch:async()=>{called++;return Response.json({ok:true});}}]]),interceptors:new Map(),
   },'/api');
-  const request=new Request('https://host/api/dsh-project-manager',{method:'POST'});
+  const request=new Request('https://host/api/dsh-workdock',{method:'POST'});
   assert.equal((await handler.fetch(request,{principal:{kind:'guest'}})).status,403);
   assert.equal(called,0);
   assert.equal((await handler.fetch(request,{principal:{kind:'owner'}})).status,200);

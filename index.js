@@ -22731,7 +22731,7 @@ ${syncWarnings.join("\n")}`);
     })
   });
   ctx.effect(() => ctx.connection.fetch.register({
-    path: "/api/dsh-project-manager",
+    path: "/api/dsh-workdock",
     methods: ["POST"],
     requestBody: "buffered",
     async fetch(request) {
@@ -22790,7 +22790,7 @@ ${syncWarnings.join("\n")}`);
     }
   }));
   ctx.systemPrompt.context({
-    name: "dsh-project-manager:project",
+    name: "dsh-workdock:project",
     order: 41,
     required: true,
     interpolate: false,

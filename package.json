@@ -1,5 +1,5 @@
 {
-  "name": "dsh-project-manager",
+  "name": "dsh-workdock",
   "version": "0.1.8",
   "description": "多目录项目管理与主要工作目录绑定",
   "type": "module",

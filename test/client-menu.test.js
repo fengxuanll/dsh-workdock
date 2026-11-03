@@ -6,12 +6,13 @@ import { JSDOM } from 'jsdom';
 
 test('left project tree context menu targets workspace, edits directories and disposes listeners', async () => {
   const dom = new JSDOM('<div id="overlay"></div><div data-row-key="workspace:w1" tabindex="0"><span id="project-label">Project one</span><button id="native-menu">…</button><div data-row-key="session:s1"><span id="session-label">Chat</span></div></div><div data-row-key="workspace:unknown" id="unknown">Unknown</div>',{runScripts:'outside-only',url:'https://harness.test/proxy/'});
+  dom.window.structuredClone=structuredClone;
   const previous = {window:globalThis.window,document:globalThis.document,IS_REACT_ACT_ENVIRONMENT:globalThis.IS_REACT_ACT_ENVIRONMENT};
   globalThis.window=dom.window; globalThis.document=dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT=true;
   const { createRoot } = await import('react-dom/client');
   const root=createRoot(document.getElementById('overlay'));
   const disposers=[], entries=new Map(), calls=[], renames=[], opens=[], created=[];
-  let dictionary, byId={s1:{id:'s1',retainedBy:{mainView:1}}};
+  let dictionary, failAction = null, activeProjectId = 'p1', byId={s1:{id:'s1',retainedBy:{mainView:1}}};
   let projects=[{id:'p1',title:'Project one',primary:'D:/main',folders:['D:/main','D:/reference'],sessionRoots:['D:/main'],revision:1,pinned:false,section:''}];
   const workspace={workspaceId:'w1',title:'Project one',path:'D:/main',sessionIds:['s1']};
   const ctx={
@@ -23,11 +24,13 @@ test('left project tree context menu targets workspace, edits directories and di
     remote:{directoryPicker:{pick:async()=>({ok:true,value:'D:/extra-reference'})},commands:{execute(){throw Error('UI must not execute visible slash commands');}}},effect(fn){disposers.push(fn());},
   };
   dom.window.fetch=async(url,options)=>{
-      assert.equal(url.href,'https://harness.test/proxy/api/dsh-project-manager');
+      assert.equal(url.href,'https://harness.test/proxy/api/dsh-workdock');
       assert.equal(options.credentials,'same-origin');
       assert.equal(options.method,'POST');
       const {sessionId,args}=JSON.parse(options.body);calls.push({sessionId,args});
-      let value={projects,bindings:{},activeProjectId:'p1'};
+      if(args.action===failAction)return {ok:false,json:async()=>({ok:false,error:'Test operation failed'})};
+      if(args.action==='bind')activeProjectId=args.id;
+      let value={projects,bindings:{},activeProjectId};
       if(args.action==='save'){projects=[{...args,id:'p1',revision:2,sessionRoots:['D:/main']}];value={project:projects[0]};}
       return {ok:true,json:async()=>({ok:true,value})};
   };
@@ -44,8 +47,8 @@ test('left project tree context menu targets workspace, edits directories and di
     plugin.apply(ctx);
   }};
   dom.window.eval(await readFile(new URL('../client.js',import.meta.url),'utf8'));
-  const Overlay=entries.get('dsh-project-manager-tree-menu');
-  const Tooltip=entries.get('dsh-project-manager-primary-tooltip');
+  const Overlay=entries.get('dsh-workdock-tree-menu');
+  const Tooltip=entries.get('dsh-workdock-primary-tooltip');
   function context(target) {
     const event=new dom.window.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:40,clientY:60});
     document.querySelector(target).dispatchEvent(event);return event;
@@ -84,13 +87,18 @@ test('left project tree context menu targets workspace, edits directories and di
       const style=document.createElement('style');style.textContent='body{margin:0;background:#1b1b1b;color:#eee;font:14px system-ui,sans-serif}';
       await writeFile(process.env.DPM_PREVIEW,'<!doctype html><html><head><meta charset="utf-8">'+style.outerHTML+'</head>'+body.outerHTML+'</html>');
     }
+    failAction='save';
+    await click('保存');
+    assert.ok(document.querySelector('#dpm-name'),'failed save must keep the editor open');
+    assert.match(document.querySelector('[role=alert]').textContent,/Test operation failed/);
+    failAction=null;
     await click('保存');
     const save=calls.find(call=>call.args.action==='save');
     assert.equal(save.sessionId,'s1');assert.equal(save.args.primary,'D:/reference');
     assert.ok(save.args.folders.includes('D:/extra-reference'));
     assert.deepEqual(renames,[['w1','Project one']]);
-    await click('×');
-    assert.equal(document.querySelector('[role=dialog]'),null);
+    assert.equal(document.querySelector('[role=dialog]'),null,'successful save closes rather than revealing the project manager');
+    assert.equal(document.querySelector('[role=menu]'),null);
     // The native workspace still has D:/main for history membership. The hover
     // must present the newly saved primary, not that immutable original path.
     let nativeHover=0;
@@ -131,6 +139,33 @@ test('left project tree context menu targets workspace, edits directories and di
     await click('编辑项目');
     assert.deepEqual(JSON.parse(JSON.stringify(created)),[{workspaceId:'w1'}]);
     assert.ok(calls.some(call=>call.sessionId==='new-session'));
+    await click('×');
+    assert.equal(entries.has('dsh-workdock-switch-project'),false);
+    assert.equal(entries.has('dsh-workdock-switch-project-overlay'),false);
+    // Cancelling a tree-launched editor closes it without exposing the manager.
+    byId={s1:{id:'s1',retainedBy:{mainView:1}}};sessionsSnapshot={byId};
+    await act(async()=>context('#project-label'));
+    await click('编辑项目');
+    const savesBefore=calls.filter(c=>c.args.action==='save').length;
+    await click('添加文件夹');
+    await click('取消');
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    assert.equal(document.querySelector('[role=menu]'),null);
+    assert.equal(calls.filter(c=>c.args.action==='save').length,savesBefore);
+    assert.equal(entries.has('dsh-workdock'),false,'sidebar footer launcher must not be registered');
+    const Manager=entries.get('dsh-workdock-dock');
+    await act(async()=>root.render(React.createElement(Manager)));
+    await click('▱ 项目管理');
+    await click('编辑项目');
+    await click('取消');
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    // Save entered from the normal manager also closes the whole dialog.
+    await click('▱ 项目管理');
+    await click('编辑项目');
+    await click('保存');
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    await click('▱ 项目管理');
+    assert.equal(document.querySelector('#dpm-name'),null,'reopening shows the list, not a stale editor');
     await click('×');
     await act(async()=>{for(const dispose of disposers)await dispose?.();root.unmount();});
     assert.equal(nativeCard.style.display,'','native card visibility is restored on plugin disposal');

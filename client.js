@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-project-manager',
+  id: 'dsh-workdock',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
@@ -30,9 +30,12 @@ window.__ModuleLoader__.load({
     return {
       inject: ['slots', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale'],
       apply(ctx) {
-        ctx.effect(() => ctx.locale.register('dsh-project-manager', { zh, en }));
-        const t = ctx.locale.bind('dsh-project-manager');
+        ctx.effect(() => ctx.locale.register('dsh-workdock', { zh, en }));
+        const t = ctx.locale.bind('dsh-workdock');
         let projectCache = [];
+        let projectVersion = 0;
+        const projectListeners = new Set();
+        const projectSource = {subscribe(fn){projectListeners.add(fn);return()=>projectListeners.delete(fn);},getSnapshot:()=>projectVersion};
         let refreshNativeCards = () => {};
         let hover = null;
         const hoverListeners = new Set();
@@ -173,7 +176,7 @@ window.__ModuleLoader__.load({
           // and web deployments under a reverse-proxy directory both work.
           const base=new URL(document.baseURI);base.search='';base.hash='';
           if(!base.pathname.endsWith('/'))base.pathname+='/';
-          const response=await fetch(new URL('api/dsh-project-manager',base),{
+          const response=await fetch(new URL('api/dsh-workdock',base),{
             method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
             body:JSON.stringify({sessionId,args}),
           });
@@ -183,11 +186,13 @@ window.__ModuleLoader__.load({
           if(args.action==='list')projectCache=value.projects;
           else if(args.action==='save'&&value.project)projectCache=[...projectCache.filter(p=>p.id!==value.project.id),value.project];
           else if(args.action==='remove')projectCache=projectCache.filter(p=>p.id!==args.id);
+          if(['save','bind','remove'].includes(args.action)){projectVersion++;for(const fn of projectListeners)fn();}
           refreshNativeCards();
           if(hover){const project=matchingProject(hover.workspace);publishHover(project?{...hover,project}:null);}
           return value;
         }
         function Manager({ sessionId: providedId, dock = false, initialProject = null, initialOpen = false, hiddenLauncher = false, workspaceId, onClose }) {
+          const version = useSyncExternalStore(projectSource.subscribe, projectSource.getSnapshot);
           const sessions = useSyncExternalStore(ctx.sessions.list.subscribe, ctx.sessions.list.getSnapshot);
           const sessionId = providedId ?? Object.values(sessions.byId).find(s => (s.retainedBy.mainView ?? 0) > 0)?.id;
           const [open, setOpen] = useState(initialOpen), [state, setState] = useState({ projects: [], activeProjectId: null });
@@ -209,8 +214,8 @@ window.__ModuleLoader__.load({
             if (previousSession.current !== sessionId) { setDraft(null); previousSession.current = sessionId; }
             setError(''); refresh().catch(e => setError(e.message));
             return () => { generation.current++; };
-          }, [sessionId, open]);
-          function close() { setOpen(false); onClose?.(); }
+          }, [sessionId, open, version]);
+          function close() { setDraft(null); setOpen(false); onClose?.(); }
           useEffect(() => {
             if (!open) return;
             const before = document.activeElement;
@@ -251,7 +256,7 @@ window.__ModuleLoader__.load({
             } catch(e) {setError(e.message);} finally {setBusy(false);}
           }
           function keyboard(e) {
-            if (e.key === 'Escape' && !busy) { e.stopPropagation(); draft ? setDraft(null) : close(); }
+            if (e.key === 'Escape' && !busy) { e.stopPropagation(); close(); }
             if (e.key === 'Tab') {
               const nodes = [...dialog.current.querySelectorAll('button:not(:disabled),input:not(:disabled),[tabindex="0"]')];
               if (!nodes.length) {e.preventDefault();return;}
@@ -277,7 +282,7 @@ window.__ModuleLoader__.load({
                     button('×',()=>setDraft({...draft,folders:draft.folders.filter(f=>f!==folder),primary:draft.primary===folder?'':draft.primary}),{className:'dpm-folder-remove','aria-label':t('removeFolder')+': '+folder,title:t('removeFolder')}))),
                     button(h(React.Fragment,null,h(FolderIcon,{add:true}),h('span',null,t('addFolder'))),pick,{className:'dpm-folder-add'})),
                   h('p',{className:'dpm-edit-note',title:t('note')},t('saveNote')),
-                  h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))setDraft(null);},{className:'dpm-danger'}),button(t('cancel'),()=>setDraft(null),{className:'dpm-cancel'}),button(t('save'),async()=>{if(await action({action:'save',...draft}))setDraft(null);},{className:'dpm-save',disabled:busy||!draft.title.trim()||!draft.primary||!draft.folders.length}))) : h(React.Fragment,null,
+                  h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))setDraft(null);},{className:'dpm-danger'}),button(t('cancel'),close,{className:'dpm-cancel'}),button(t('save'),async()=>{if(await action({action:'save',...draft})){setDraft(null);close();}},{className:'dpm-save',disabled:busy||!draft.title.trim()||!draft.primary||!draft.folders.length}))) : h(React.Fragment,null,
                   h('div',{className:'dpm-row'},button('+ '+t('add'),()=>edit(null)),button(t('reload'),()=>action({action:'list'}))),
                   !ordered.length&&h('p',null,t('empty')),
                   h('div',{className:'dpm-list'},ordered.map(p=>h('article',{className:'dpm-card',key:p.id},
@@ -389,10 +394,9 @@ window.__ModuleLoader__.load({
             ...(request.ellipsis ? [item('manage'),item('openFolder'),h('div',{key:'separator',className:'dpm-menu-separator',role:'separator'}),item('edit','rename')] : [item('edit'),item('primary','setPrimary'),item('openFolder')]),item('bind'),item('newChat'),
             h('div',{className:'dpm-menu-separator',role:'separator'}),item('more'),item('remove',request.ellipsis?'deleteWorkspace':'remove'),error&&h('div',{className:'dpm-error',role:'alert'},error)));
         }
-        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({name:'sidebar.footer.action',id:'dsh-project-manager',order:10}, Manager));
-        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-project-manager-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
-        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-project-manager-tree-menu',order:20}, TreeOverlay));
-        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-project-manager-primary-tooltip',order:19}, PrimaryDirectoryTooltip));
+        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-primary-tooltip',order:19}, PrimaryDirectoryTooltip));
       }
     };
   }
