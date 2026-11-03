@@ -58,3 +58,19 @@ test('filesystem validation rejects missing paths, files and relative directorie
     await assert.rejects(canonicalDirectory(join(root,'file')),/不是目录/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+
+test('recent usage is persisted without changing configuration revisions',async()=>{
+  const {manager:m,store}=fixture();
+  const {project:p}=await save(m);
+  assert.ok(p.lastUsedAt > 0);
+  await store.set({...m.snapshot(),projects:[{...p,lastUsedAt:1}]});
+  await m.execute({action:'touch',id:p.id},{header:{}});
+  const touched=m.snapshot().projects[0];
+  assert.ok(touched.lastUsedAt > 1);
+  assert.equal(touched.revision,p.revision);
+  assert.deepEqual(m.snapshot().bindings,{s1:p.id});
+  await store.set({...m.snapshot(),projects:[{...touched,lastUsedAt:1}]});
+  await m.execute({action:'bind',id:p.id},session('s2'));
+  assert.ok(new ProjectManager(store).snapshot().projects[0].lastUsedAt > 1);
+  assert.equal(m.snapshot().bindings.s2,p.id);
+});

@@ -22607,7 +22607,7 @@ var ProjectManager = class {
           primary,
           sessionRoots: [.../* @__PURE__ */ new Set([...previous?.sessionRoots ?? [], primary])],
           pinned: previous?.pinned ?? false,
-          section: previous?.section ?? "",
+          lastUsedAt: Date.now(),
           revision: (previous?.revision ?? 0) + 1
         };
         if (previous && args.revision !== previous.revision) throw new Error("\u9879\u76EE\u5DF2\u5728\u5176\u4ED6\u7A97\u53E3\u66F4\u65B0\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
@@ -22620,14 +22620,13 @@ var ProjectManager = class {
       if (args.action === "bind") {
         await this.canonical(project2.primary);
         state.bindings[session.header.id ?? session.id] = project2.id;
+        project2.lastUsedAt = Date.now();
       } else if (args.action === "remove") {
         state.projects = state.projects.filter((p) => p.id !== project2.id);
         state.bindings = Object.fromEntries(Object.entries(state.bindings).filter(([, id]) => id !== project2.id));
-      } else if (args.action === "pin") project2.pinned = !project2.pinned;
-      else if (args.action === "section") {
-        if (typeof args.section !== "string") throw new Error("\u5206\u533A\u540D\u79F0\u65E0\u6548");
-        project2.section = args.section.trim();
-      } else throw new Error("\u672A\u77E5\u64CD\u4F5C");
+      } else if (args.action === "touch") project2.lastUsedAt = Date.now();
+      else if (args.action === "pin") project2.pinned = !project2.pinned;
+      else throw new Error("\u672A\u77E5\u64CD\u4F5C");
       await this.store.set(state);
       return { project: project2, removed: args.action === "remove" };
     });
@@ -22654,7 +22653,7 @@ function openDirectory(path, platform = process.platform, launch = spawn) {
 
 // src/index.js
 var inject = ["storageDomain", "commands", "tools", "systemPrompt", "workspaceRegistry", "connection", "agents"];
-var project = external_exports.object({ id: external_exports.string(), title: external_exports.string(), folders: external_exports.array(external_exports.string()).min(1), primary: external_exports.string(), sessionRoots: external_exports.array(external_exports.string()), pinned: external_exports.boolean(), section: external_exports.string(), revision: external_exports.number() });
+var project = external_exports.object({ id: external_exports.string(), title: external_exports.string(), folders: external_exports.array(external_exports.string()).min(1), primary: external_exports.string(), sessionRoots: external_exports.array(external_exports.string()), pinned: external_exports.boolean(), revision: external_exports.number(), lastUsedAt: external_exports.number().nonnegative().optional() });
 var spec = defineDomain({ name: "dsh_project_manager", version: 1, tables: {}, global: {
   schema: external_exports.object({ projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()) }),
   initial: { projects: [], bindings: {} }
@@ -22694,39 +22693,51 @@ async function apply(ctx) {
   }
   async function operate(args, agent, signal) {
     const result = await manager.execute(args, agent?.session ?? { header: {} });
-    if (args.action !== "list") await enforce(agent, signal);
+    if (args.action === "save" || args.action === "bind") await enforce(agent, signal);
     if (args.action === "list" || args.action === "save" || args.action === "bind") {
       const syncWarnings = await syncWorkspaces();
-      if (syncWarnings.length && args.action !== "list") {
-        throw new Error(`\u9879\u76EE\u914D\u7F6E\u5DF2\u4FDD\u5B58\uFF0C\u4F46\u540C\u6B65\u5DE6\u4FA7\u5DE5\u4F5C\u533A\u5931\u8D25\uFF1A
-${syncWarnings.join("\n")}`);
-      }
       if (syncWarnings.length) result.syncWarnings = syncWarnings;
     }
     return result;
   }
+  async function checkDirectories(folders) {
+    return (await Promise.all([...new Set(folders)].map(async (path) => {
+      try {
+        await manager.canonical(path);
+        return null;
+      } catch (error51) {
+        return { path, error: error51.message };
+      }
+    }))).filter(Boolean);
+  }
   async function perform(args, agent, signal) {
+    if (args.action === "check_directories") return { directoryWarnings: await checkDirectories(args.folders ?? []) };
     if (args.action === "open_folder") {
-      const workspace = ctx.workspaceRegistry.list().find((item) => item.id === args.workspaceId);
-      if (!workspace) throw new Error("\u5DE5\u4F5C\u533A\u4E0D\u5B58\u5728\uFF0C\u8BF7\u5237\u65B0\u9879\u76EE\u6811");
+      const workspace = args.workspaceId ? ctx.workspaceRegistry.list().find((item) => item.id === args.workspaceId) : null;
       const projects = manager.snapshot().projects;
-      const project2 = projects.find((item) => item.primary === workspace.path) ?? projects.find((item) => item.sessionRoots.includes(workspace.path));
+      const project2 = args.id ? projects.find((item) => item.id === args.id) : workspace && (projects.find((item) => item.primary === workspace.path) ?? projects.find((item) => item.sessionRoots.includes(workspace.path)));
+      if (!project2 && !workspace) throw new Error("\u9879\u76EE\u6216\u5DE5\u4F5C\u533A\u4E0D\u5B58\u5728\uFF0C\u8BF7\u5237\u65B0\u9879\u76EE\u5217\u8868");
       const path = await manager.canonical(project2?.primary ?? workspace.path);
       await openDirectory(path);
       return { path };
     }
-    return operate(args, agent, signal);
+    const result = await operate(args, agent, signal);
+    if (args.action === "list") {
+      result.directoryWarnings = (await Promise.all(result.projects.map(
+        async (project2) => (await checkDirectories(project2.folders)).map((warning) => ({ ...warning, projectId: project2.id }))
+      ))).flat();
+    }
+    return result;
   }
   const apiSchema = external_exports.object({
     sessionId: external_exports.string().min(1).max(500).optional(),
     args: external_exports.object({
-      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "section", "open_folder"]),
+      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "check_directories", "touch"]),
       id: external_exports.string().max(500).optional(),
       title: external_exports.string().max(500).optional(),
       folders: external_exports.array(external_exports.string().max(32768)).max(128).optional(),
       primary: external_exports.string().max(32768).optional(),
       revision: external_exports.number().int().nonnegative().optional(),
-      section: external_exports.string().max(500).optional(),
       workspaceId: external_exports.string().max(500).optional()
     })
   });
@@ -22747,7 +22758,7 @@ ${syncWarnings.join("\n")}`);
           return json2(400, { ok: false, error: "\u9879\u76EE\u7BA1\u7406\u8BF7\u6C42\u53C2\u6570\u65E0\u6548" });
         }
         const agent = payload.sessionId ? ctx.agents.get(payload.sessionId) : void 0;
-        if (!agent && payload.args.action !== "list" && payload.args.action !== "open_folder") return json2(409, { ok: false, error: "\u5F53\u524D\u804A\u5929\u5C1A\u672A\u5C31\u7EEA\uFF0C\u8BF7\u6253\u5F00\u804A\u5929\u540E\u91CD\u8BD5" });
+        if (!agent && ["save", "bind"].includes(payload.args.action)) return json2(409, { ok: false, error: "\u5F53\u524D\u804A\u5929\u5C1A\u672A\u5C31\u7EEA\uFF0C\u8BF7\u6253\u5F00\u804A\u5929\u540E\u91CD\u8BD5" });
         const value = await perform(payload.args, agent, request.signal);
         return json2(200, { ok: true, value });
       } catch (error51) {
@@ -22770,15 +22781,14 @@ ${syncWarnings.join("\n")}`);
   });
   ctx.tools.register(defineTool({
     name: "project_manager",
-    description: "List, save, bind, pin, group or remove multi-directory projects. The primary directory controls subsequent work. Removing a project never deletes files.",
+    description: "List, save, bind, pin or remove multi-directory projects. The primary directory controls subsequent work. Removing a project never deletes files.",
     parameters: {
-      action: { type: "string", required: true, enum: ["list", "save", "bind", "remove", "pin", "section"] },
+      action: { type: "string", required: true, enum: ["list", "save", "bind", "remove", "pin"] },
       id: { type: "string" },
       title: { type: "string" },
       folders: { type: "array", items: { type: "string" } },
       primary: { type: "string" },
-      revision: { type: "number" },
-      section: { type: "string" }
+      revision: { type: "number" }
     },
     output: {
       schema: { type: "object", additionalProperties: false, properties: { json: { type: "string", required: true } } },

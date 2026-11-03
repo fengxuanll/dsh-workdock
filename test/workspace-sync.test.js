@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { apply } from '../index.js';
 
 test('activation backfills legacy projects and list retries sync failures without duplicate workspaces',async()=>{
-  const legacy={id:'legacy',title:'Qizhu',primary:'D:/Qizhu/v1',folders:['D:/Qizhu/v1'],sessionRoots:['D:/Qizhu/v1'],revision:1,pinned:false,section:''};
+  const legacy={id:'legacy',title:'Qizhu',primary:'D:/Qizhu/v1',folders:['D:/Qizhu/v1'],sessionRoots:['D:/Qizhu/v1'],revision:1,pinned:false};
   let state={projects:[legacy],bindings:{}},command,fail=true;
   const workspaces=[],disposers=[];
   const ctx={
@@ -34,7 +34,7 @@ test('activation backfills legacy projects and list retries sync failures withou
 });
 
 test('activation registers already-saved projects before any chat command',async()=>{
-  const project={id:'old',title:'Saved project',primary:'D:/Saved',folders:['D:/Saved'],sessionRoots:['D:/Saved'],revision:1,pinned:false,section:''};
+  const project={id:'old',title:'Saved project',primary:'D:/Saved',folders:['D:/Saved'],sessionRoots:['D:/Saved'],revision:1,pinned:false};
   const workspaces=[],disposers=[];
   await apply({
     connection:{fetch:{register:()=>()=>{}}},agents:{get:()=>undefined},

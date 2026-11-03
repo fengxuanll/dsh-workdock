@@ -5,7 +5,7 @@ import { ProjectManager, projectContext } from '../core.js';
 import { openDirectory } from '../folder-opener.js';
 
 export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry', 'connection', 'agents'];
-const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), section: z.string(), revision: z.number() });
+const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), revision: z.number(), lastUsedAt: z.number().nonnegative().optional() });
 const spec = defineDomain({ name: 'dsh_project_manager', version: 1, tables: {}, global: {
   schema: z.object({ projects: z.array(project), bindings: z.record(z.string(), z.string()) }),
   initial: { projects: [], bindings: {} }
@@ -51,36 +51,47 @@ export async function apply(ctx) {
   }
   async function operate(args, agent, signal) {
     const result = await manager.execute(args, agent?.session ?? {header:{}});
-    if (args.action !== 'list') await enforce(agent, signal);
+    if (args.action === 'save' || args.action === 'bind') await enforce(agent, signal);
     if (args.action === 'list' || args.action === 'save' || args.action === 'bind') {
       const syncWarnings = await syncWorkspaces();
-      if (syncWarnings.length && args.action !== 'list') {
-        throw new Error(`项目配置已保存，但同步左侧工作区失败：\n${syncWarnings.join('\n')}`);
-      }
       if (syncWarnings.length) result.syncWarnings = syncWarnings;
     }
     return result;
   }
+  async function checkDirectories(folders) {
+    return (await Promise.all([...new Set(folders)].map(async path => {
+      try { await manager.canonical(path); return null; }
+      catch (error) { return { path, error: error.message }; }
+    }))).filter(Boolean);
+  }
   async function perform(args, agent, signal) {
+    if (args.action === 'check_directories') return { directoryWarnings: await checkDirectories(args.folders ?? []) };
     if (args.action === 'open_folder') {
-      const workspace = ctx.workspaceRegistry.list().find(item => item.id === args.workspaceId);
-      if (!workspace) throw new Error('工作区不存在，请刷新项目树');
+      const workspace = args.workspaceId ? ctx.workspaceRegistry.list().find(item => item.id === args.workspaceId) : null;
       const projects = manager.snapshot().projects;
-      const project = projects.find(item => item.primary === workspace.path)
-        ?? projects.find(item => item.sessionRoots.includes(workspace.path));
+      const project = args.id ? projects.find(item => item.id === args.id)
+        : workspace && (projects.find(item => item.primary === workspace.path)
+          ?? projects.find(item => item.sessionRoots.includes(workspace.path)));
+      if (!project && !workspace) throw new Error('项目或工作区不存在，请刷新项目列表');
       const path = await manager.canonical(project?.primary ?? workspace.path);
       await openDirectory(path);
       return { path };
     }
-    return operate(args, agent, signal);
+    const result = await operate(args, agent, signal);
+    if (args.action === 'list') {
+      result.directoryWarnings = (await Promise.all(result.projects.map(async project =>
+        (await checkDirectories(project.folders)).map(warning => ({ ...warning, projectId: project.id }))
+      ))).flat();
+    }
+    return result;
   }
   const apiSchema = z.object({
     sessionId:z.string().min(1).max(500).optional(),
     args:z.object({
-      action:z.enum(['list','save','bind','remove','pin','section','open_folder']),
+      action:z.enum(['list','save','bind','remove','pin','open_folder','check_directories','touch']),
       id:z.string().max(500).optional(),title:z.string().max(500).optional(),
       folders:z.array(z.string().max(32768)).max(128).optional(),primary:z.string().max(32768).optional(),
-      revision:z.number().int().nonnegative().optional(),section:z.string().max(500).optional(),workspaceId:z.string().max(500).optional(),
+      revision:z.number().int().nonnegative().optional(),workspaceId:z.string().max(500).optional(),
     }),
   });
   // Exact Fetch routes are admitted by Connection's authenticated owner-only
@@ -96,7 +107,7 @@ export async function apply(ctx) {
         let payload;
         try{payload=apiSchema.parse(JSON.parse(text));}catch{return json(400,{ok:false,error:'项目管理请求参数无效'});}
         const agent=payload.sessionId?ctx.agents.get(payload.sessionId):undefined;
-        if(!agent && payload.args.action!=='list' && payload.args.action!=='open_folder')return json(409,{ok:false,error:'当前聊天尚未就绪，请打开聊天后重试'});
+        if (!agent && ['save','bind'].includes(payload.args.action)) return json(409,{ok:false,error:'当前聊天尚未就绪，请打开聊天后重试'});
         const value=await perform(payload.args,agent,request.signal);
         return json(200,{ok:true,value});
       }catch(error){return json(400,{ok:false,error:error.message});}
@@ -111,11 +122,11 @@ export async function apply(ctx) {
       } catch (error) { return { kind: 'error', text: error.message }; }
     }
   });
-  ctx.tools.register(defineTool({ name: 'project_manager', description: 'List, save, bind, pin, group or remove multi-directory projects. The primary directory controls subsequent work. Removing a project never deletes files.',
+  ctx.tools.register(defineTool({ name: 'project_manager', description: 'List, save, bind, pin or remove multi-directory projects. The primary directory controls subsequent work. Removing a project never deletes files.',
     parameters: {
-      action: { type: 'string', required: true, enum: ['list', 'save', 'bind', 'remove', 'pin', 'section'] },
+      action: { type: 'string', required: true, enum: ['list', 'save', 'bind', 'remove', 'pin'] },
       id: { type: 'string' }, title: { type: 'string' }, folders: { type: 'array', items: { type: 'string' } },
-      primary: { type: 'string' }, revision: { type: 'number' }, section: { type: 'string' }
+      primary: { type: 'string' }, revision: { type: 'number' }
     },
     output: { schema: { type: 'object', additionalProperties: false, properties: { json: { type: 'string', required: true } } },
       render: (_args, value) => [{ type: 'text', text: value.json }] },

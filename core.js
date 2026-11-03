@@ -51,7 +51,7 @@ export class ProjectManager {
         // Two projects with the same primary would make new-session routing ambiguous.
         if (state.projects.some(p => p.id !== previous?.id && p.primary === primary)) throw new Error('该主要目录已属于另一个项目');
         const project = { id: previous?.id ?? randomUUID(), title: args.title.trim(), folders, primary, sessionRoots: [...new Set([...(previous?.sessionRoots ?? []), primary])],
-          pinned: previous?.pinned ?? false, section: previous?.section ?? '', revision: (previous?.revision ?? 0) + 1 };
+          pinned: previous?.pinned ?? false, lastUsedAt: Date.now(), revision: (previous?.revision ?? 0) + 1 };
         if (previous && args.revision !== previous.revision) throw new Error('项目已在其他窗口更新，请刷新后重试');
         state.projects = previous ? state.projects.map(p => p.id === project.id ? project : p) : [...state.projects, project];
         state.bindings[session.header.id ?? session.id] = project.id;
@@ -62,14 +62,13 @@ export class ProjectManager {
       if (args.action === 'bind') {
         await this.canonical(project.primary); // Do not silently fall back if it disappeared.
         state.bindings[session.header.id ?? session.id] = project.id;
+        project.lastUsedAt = Date.now();
       } else if (args.action === 'remove') {
         state.projects = state.projects.filter(p => p.id !== project.id);
         state.bindings = Object.fromEntries(Object.entries(state.bindings).filter(([, id]) => id !== project.id));
-      } else if (args.action === 'pin') project.pinned = !project.pinned;
-      else if (args.action === 'section') {
-        if (typeof args.section !== 'string') throw new Error('分区名称无效');
-        project.section = args.section.trim();
-      } else throw new Error('未知操作');
+      } else if (args.action === 'touch') project.lastUsedAt = Date.now();
+      else if (args.action === 'pin') project.pinned = !project.pinned;
+      else throw new Error('未知操作');
       await this.store.set(state);
       return { project, removed: args.action === 'remove' };
     });

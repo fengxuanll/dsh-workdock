@@ -7,13 +7,14 @@ import { JSDOM } from 'jsdom';
 test('left project tree context menu targets workspace, edits directories and disposes listeners', async () => {
   const dom = new JSDOM('<div id="overlay"></div><div data-row-key="workspace:w1" tabindex="0"><span id="project-label">Project one</span><button id="native-menu">…</button><div data-row-key="session:s1"><span id="session-label">Chat</span></div></div><div data-row-key="workspace:unknown" id="unknown">Unknown</div>',{runScripts:'outside-only',url:'https://harness.test/proxy/'});
   dom.window.structuredClone=structuredClone;
+  dom.window.confirm=()=>true;
   const previous = {window:globalThis.window,document:globalThis.document,IS_REACT_ACT_ENVIRONMENT:globalThis.IS_REACT_ACT_ENVIRONMENT};
   globalThis.window=dom.window; globalThis.document=dom.window.document; globalThis.IS_REACT_ACT_ENVIRONMENT=true;
   const { createRoot } = await import('react-dom/client');
   const root=createRoot(document.getElementById('overlay'));
   const disposers=[], entries=new Map(), calls=[], renames=[], opens=[], created=[];
   let dictionary, failAction = null, activeProjectId = 'p1', byId={s1:{id:'s1',retainedBy:{mainView:1}}};
-  let projects=[{id:'p1',title:'Project one',primary:'D:/main',folders:['D:/main','D:/reference'],sessionRoots:['D:/main'],revision:1,pinned:false,section:''}];
+  let projects=[{id:'p1',title:'Project one',primary:'D:/main',folders:['D:/main','D:/reference'],sessionRoots:['D:/main'],revision:1,pinned:false}];
   const workspace={workspaceId:'w1',title:'Project one',path:'D:/main',sessionIds:['s1']};
   const ctx={
     slots:{inject(_name,callback){callback();},register(options,component){entries.set(options.id,component);return()=>{};}},
@@ -124,7 +125,7 @@ test('left project tree context menu targets workspace, edits directories and di
     const save=calls.find(call=>call.args.action==='save');
     assert.equal(save.sessionId,'s1');assert.equal(save.args.primary,'D:/reference');
     assert.ok(save.args.folders.includes('D:/extra-reference'));
-    assert.deepEqual(renames,[['w1','Project one']]);
+    assert.deepEqual(renames,[],'backend owns sidebar titles');
     assert.equal(document.querySelector('[role=dialog]'),null,'successful save closes rather than revealing the project manager');
     assert.equal(document.querySelector('[role=menu]'),null);
     // The native workspace still has D:/main for history membership. The hover
@@ -152,16 +153,17 @@ test('left project tree context menu targets workspace, edits directories and di
     assert.ok([...document.querySelectorAll('[role=menuitem]')].some(node=>node.textContent==='项目管理'));
     await click('项目管理');
     assert.ok(document.querySelector('[role=dialog]'));
+    assert.equal(document.querySelector('#dpm-name').value,'Project one','row management keeps targeting the selected project');
     await click('×');
     await act(async()=>document.getElementById('native-menu').click());
     await click('在资源管理器中打开');
     assert.ok(calls.some(call=>call.args.action==='open_folder'&&call.args.workspaceId==='w1'));
     assert.equal(document.querySelector('[role=menu]'),null);
-    // Native pin/section actions retain their existing host implementation.
+    // Native pin actions retain their existing host implementation.
     let nativeClicks=0;document.getElementById('native-menu').onclick=()=>nativeClicks++;
     await act(async()=>context('#project-label'));
-    await click('置顶 / 分区 / 更多…');assert.equal(nativeClicks,1);
-    // No active chat: a management click can create an explicit workspace session.
+    await click('置顶 / 更多…');assert.equal(nativeClicks,1);
+    // Explicit editing may create a workspace chat; passive management must not.
     byId={};sessionsSnapshot={byId};
     await act(async()=>context('#project-label'));
     await click('编辑项目');

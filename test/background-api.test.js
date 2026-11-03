@@ -56,3 +56,64 @@ test('actual Harness Connection admits background routes only for the authentica
   assert.equal((await handler.fetch(request,{principal:{kind:'owner'}})).status,200);
   assert.equal(called,1);
 });
+
+test('background project management works without a chat and reports partial sync success',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'dpm-experience-'));
+  const disposers=[];
+  let route,state,cwd=root,failSync=true;
+  const workspaces=[];
+  const agent={session:{header:{id:'chat',cwd:root}},ctx:{get:()=>({get:()=>cwd,set:async(_agent,path)=>{cwd=path;}})}};
+  try {
+    const primary=join(root,'primary'),reference=join(root,'reference');
+    await mkdir(primary);await mkdir(reference);
+    await apply({
+      connection:{fetch:{register:value=>{route=value;return()=>{};}}},agents:{get:id=>id==='chat'?agent:undefined},
+      storageDomain:{open:async spec=>{
+        state=spec.global.schema.parse(spec.global.initial);
+        return {global:{get:()=>state,set:async value=>{state=spec.global.schema.parse(value);}},close(){}};
+      }},
+      workspaceRegistry:{list:()=>workspaces,create:async(path,title)=>{
+        if(failSync)throw Error('temporary sidebar failure');
+        const workspace={id:'native',path,title};workspaces.push(workspace);return workspace;
+      }},
+      commands:{register(){}},tools:{register(){}},systemPrompt:{context(){}},on(){},effect:fn=>disposers.push(fn()),
+    });
+    const post=async(args,sessionId)=>{
+      const response=await route.fetch(new Request('https://host/api/dsh-workdock',{method:'POST',body:JSON.stringify({args,sessionId})}));
+      return {status:response.status,...await response.json()};
+    };
+    const saved=await post({action:'save',title:'Partial success',folders:[primary,reference],primary},'chat');
+    assert.equal(saved.status,200);
+    assert.match(saved.value.syncWarnings[0],/temporary sidebar failure/);
+    const project=saved.value.project;
+    assert.equal(state.projects[0].id,project.id);
+    assert.ok(state.projects[0].lastUsedAt > 0);
+    assert.equal(cwd,primary);
+    failSync=false;
+    const listed=await post({action:'list'});
+    assert.equal(listed.status,200);
+    assert.equal(listed.value.syncWarnings,undefined);
+    assert.deepEqual(listed.value.directoryWarnings,[]);
+    assert.equal(listed.value.activeProjectId,null);
+    assert.equal(workspaces.length,1);
+    await rm(reference,{recursive:true});
+    const checked=await post({action:'check_directories',folders:[primary,reference,reference]});
+    assert.equal(checked.status,200);
+    assert.equal(checked.value.directoryWarnings.length,1);
+    assert.equal(checked.value.directoryWarnings[0].path,reference);
+    assert.ok(checked.value.directoryWarnings[0].error);
+    const warning=(await post({action:'list'})).value.directoryWarnings[0];
+    assert.equal(warning.projectId,project.id);
+    assert.equal(warning.path,reference);
+    for(const args of [{action:'pin',id:project.id},{action:'touch',id:project.id}]) {
+      assert.equal((await post(args)).status,200);
+    }
+    assert.equal(state.projects[0].pinned,true);
+    assert.equal((await post({action:'bind',id:project.id})).status,409);
+    assert.equal((await post({action:'save',title:'No chat',folders:[primary],primary})).status,409);
+    assert.equal((await post({action:'remove',id:project.id})).status,200);
+    assert.equal(state.projects.length,0);
+    assert.deepEqual(state.bindings,{});
+    await access(primary);
+  } finally {for(const dispose of disposers)await dispose?.();await rm(root,{recursive:true,force:true});}
+});
