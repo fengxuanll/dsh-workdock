@@ -54,8 +54,36 @@ test('left project tree context menu targets workspace, edits directories and di
     document.querySelector(target).dispatchEvent(event);return event;
   }
   const click = async text => {const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,`Missing button ${text}`);await act(async()=>button.click());};
+  const addWorkspace=document.createElement('button');
+  addWorkspace.setAttribute('aria-label','添加工作区');
+  addWorkspace.innerHTML='<span>+</span>';document.body.append(addWorkspace);
+  let nativeAddClicks=0,nativeAddPointers=0;
+  addWorkspace.onclick=()=>nativeAddClicks++;
+  addWorkspace.addEventListener('pointerdown',()=>nativeAddPointers++);
   try{
     await act(async()=>root.render(React.createElement(React.Fragment,null,React.createElement(Overlay),React.createElement(Tooltip))));
+    // The toolbar action opens a blank add form, including nested icon clicks.
+    await act(async()=>{
+      addWorkspace.firstChild.dispatchEvent(new dom.window.MouseEvent('pointerdown',{button:0,bubbles:true}));
+      addWorkspace.firstChild.click();
+    });
+    assert.equal(nativeAddClicks,0);assert.equal(nativeAddPointers,0);
+    assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'添加项目');
+    assert.equal(document.querySelector('#dpm-name').value,'');
+    assert.equal(document.querySelectorAll('.dpm-source').length,0);
+    assert.equal(document.querySelector('.dpm-save').disabled,true);
+    await act(async()=>document.querySelector('[role=dialog]').dispatchEvent(new dom.window.MouseEvent('pointerdown',{bubbles:true})));
+    assert.ok(document.querySelector('[role=dialog]'),'dialog interactions must not close the overlay');
+    assert.ok(document.querySelector('#dpm-name'));
+    await click('取消');
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    // Keyboard activation also emits click; the English host label is supported.
+    addWorkspace.setAttribute('aria-label','Add workspace');
+    await act(async()=>{addWorkspace.focus();addWorkspace.click();});
+    await act(async()=>document.querySelector('[role=dialog]').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    assert.equal(document.activeElement,addWorkspace);
+    assert.equal(nativeAddClicks,0);
     assert.equal(context('#session-label').defaultPrevented,false);
     assert.equal(context('#unknown').defaultPrevented,false);
     await act(async()=>assert.equal(context('#project-label').defaultPrevented,true));
@@ -167,9 +195,17 @@ test('left project tree context menu targets workspace, edits directories and di
     await click('▱ 项目管理');
     assert.equal(document.querySelector('#dpm-name'),null,'reopening shows the list, not a stale editor');
     await click('×');
+    await act(async()=>root.render(React.createElement(Overlay)));
+    byId={};sessionsSnapshot={byId};
+    await act(async()=>addWorkspace.click());
+    assert.match(document.querySelector('[role=dialog]').textContent,/请先打开或创建一个聊天/);
+    await click('×');
     await act(async()=>{for(const dispose of disposers)await dispose?.();root.unmount();});
     assert.equal(nativeCard.style.display,'','native card visibility is restored on plugin disposal');
     assert.equal(context('#project-label').defaultPrevented,false);
+    addWorkspace.click();
+    addWorkspace.dispatchEvent(new dom.window.MouseEvent('pointerdown',{button:0,bubbles:true}));
+    assert.equal(nativeAddClicks,1);assert.equal(nativeAddPointers,1);
   }finally{
     await act(async()=>root.unmount());
     dom.window.close();

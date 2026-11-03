@@ -109,6 +109,11 @@ window.__ModuleLoader__.load({
           document.addEventListener('focusout',onProjectOut,true);
           document.addEventListener('scroll',clearHover,true);
           window.addEventListener('resize',clearHover);
+          // Match the host toolbar action, not project-row or dialog buttons.
+          function addWorkspaceButton(target) {
+            if (!(target instanceof Element)) return null;
+            return target.closest('button[aria-label="添加工作区"],button[aria-label="Add workspace"]');
+          }
           function menuButtonRow(target) {
             if (!(target instanceof Element) || target.closest('[data-row-key^="session:"]')) return null;
             const button = target.closest('button');
@@ -116,9 +121,15 @@ window.__ModuleLoader__.load({
             return row && row.querySelector('button') === button ? row : null;
           }
           function onMenuPointer(event) {
+            if (event.button === 0 && addWorkspaceButton(event.target)) { event.stopPropagation(); return; }
             if (!allowNativeMenu && event.button === 0 && menuButtonRow(event.target)) event.stopPropagation();
           }
           function onMenuClick(event) {
+            if (addWorkspaceButton(event.target)) {
+              event.preventDefault(); event.stopPropagation();
+              publishTree({ manage: true, sequence: ++requestSequence });
+              return;
+            }
             if (allowNativeMenu) return;
             const row = menuButtonRow(event.target);
             if (!row) return;
@@ -271,8 +282,8 @@ window.__ModuleLoader__.load({
           return h('div', {className:'dpm'}, h('style',null,css+folderCss),
             !hiddenLauncher && h('button',{ref:launcher,type:'button',className:dock?'dpm-dock dpm-mini':'dpm-launch',onClick:()=>setOpen(true),title:active?.primary}, '▱ '+(dock&&active?active.title:t('title'))),
             open && h('div',{className:'dpm-backdrop',onClick:e=>{if(e.target===e.currentTarget&&!busy)close();}},
-              h('section',{className:'dpm-dialog'+(draft?' dpm-edit':''),ref:dialog,tabIndex:-1,role:'dialog','aria-modal':true,'aria-label':t(draft?'edit':'title'),onKeyDown:keyboard},
-                h('div',{className:'dpm-head'},h('h2',null,t(draft?'edit':'title')),button('×',close,{'aria-label':t('close')})),
+              h('section',{className:'dpm-dialog'+(draft?' dpm-edit':''),ref:dialog,tabIndex:-1,role:'dialog','aria-modal':true,'aria-label':t(draft?(draft.id?'edit':'add'):'title'),onKeyDown:keyboard},
+                h('div',{className:'dpm-head'},h('h2',null,t(draft?(draft.id?'edit':'add'):'title')),button('×',close,{'aria-label':t('close')})),
                 !sessionId ? h('p',null,t('needSession')) : draft ? h(React.Fragment,null,
                   h('label',{className:'dpm-sr-only',htmlFor:'dpm-name'},t('name')),h('div',{className:'dpm-name-field'},h(FolderIcon),h('input',{id:'dpm-name',value:draft.title,disabled:busy,onChange:e=>setDraft({...draft,title:e.target.value})})),
                   h('label',{className:'dpm-label'},t('folders')),
@@ -320,7 +331,7 @@ window.__ModuleLoader__.load({
           const closeMenu = () => publishTree(null);
           useEffect(() => {
             setEditor(null); setError(''); setBusy(false);
-            if (!request) return;
+            if (!request || request.manage) return;
             const node = menu.current;
             const rect = node?.getBoundingClientRect();
             setPosition({left:Math.max(8,Math.min(request.x,window.innerWidth-(rect?.width ?? 228)-8)),top:Math.max(8,Math.min(request.y,window.innerHeight-(rect?.height ?? 300)-8))});
@@ -387,6 +398,7 @@ window.__ModuleLoader__.load({
             items[next].focus();
           }
           if (!request) return null;
+          if (request.manage) return h(Manager,{key:request.sequence,initialProject:{title:'',folders:[],primary:''},initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
           if (editor) return h(Manager,{key:request.sequence,...editor,initialProject:editor.project,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
           const item = (key,label=key) => h('button',{key,type:'button',role:'menuitem',disabled:busy,onClick:()=>run(key),className:key==='remove'?'dpm-danger':undefined},t(label));
           return h('div',{className:'dpm'},h('style',null,css+folderCss),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('title'),style:position,onKeyDown:keyboard},
