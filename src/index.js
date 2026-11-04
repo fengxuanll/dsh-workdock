@@ -2,7 +2,7 @@ import { defineDomain } from '@deepseek-ai/dsh-storage-domain';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { z } from 'zod';
 import { ProjectManager, projectContext } from '../core.js';
-import { openDirectory } from '../folder-opener.js';
+import { openDirectory, openLocalPath } from '../folder-opener.js';
 
 export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry', 'connection', 'agents'];
 const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), revision: z.number(), lastUsedAt: z.number().nonnegative().optional() });
@@ -65,6 +65,7 @@ export async function apply(ctx) {
     }))).filter(Boolean);
   }
   async function perform(args, agent, signal) {
+    if (args.action === 'open_file' || args.action === 'reveal_file') return openLocalPath(args.action, args.path, agent);
     if (args.action === 'check_directories') return { directoryWarnings: await checkDirectories(args.folders ?? []) };
     if (args.action === 'open_folder') {
       const workspace = args.workspaceId ? ctx.workspaceRegistry.list().find(item => item.id === args.workspaceId) : null;
@@ -88,7 +89,8 @@ export async function apply(ctx) {
   const apiSchema = z.object({
     sessionId:z.string().min(1).max(500).optional(),
     args:z.object({
-      action:z.enum(['list','save','bind','remove','pin','open_folder','check_directories','touch']),
+      action:z.enum(['list','save','bind','remove','pin','open_folder','open_file','reveal_file','check_directories','touch']),
+      path:z.string().min(1).max(32768).optional(),
       id:z.string().max(500).optional(),title:z.string().max(500).optional(),
       folders:z.array(z.string().max(32768)).max(128).optional(),primary:z.string().max(32768).optional(),
       revision:z.number().int().nonnegative().optional(),workspaceId:z.string().max(500).optional(),
