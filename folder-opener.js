@@ -5,8 +5,12 @@ import { dirname, extname, isAbsolute, resolve } from 'node:path';
 /** Launch the OS file manager with one literal path argument, never a shell. */
 export function openDirectory(path, platform = process.platform, launch = spawn) {
   const command = platform === 'win32' ? 'explorer.exe' : platform === 'darwin' ? 'open' : 'xdg-open';
+  return launchFileManager(command, [path], launch);
+}
+
+function launchFileManager(command, args, launch) {
   return new Promise((resolve, reject) => {
-    const child = launch(command, [path], { shell: false, detached: true, stdio: 'ignore', windowsHide: false });
+    const child = launch(command, args, { shell: false, detached: true, stdio: 'ignore', windowsHide: false });
     child.once('error', reject);
     child.once('spawn', () => { child.unref(); resolve(); });
   });
@@ -76,6 +80,15 @@ export async function openLocalPath(action, input, agent, { platform = process.p
     throw new Error('为避免执行代码，不支持直接打开可执行文件或脚本；请打开所在文件夹');
   }
   const path = action === 'reveal_file' && !target.isDirectory ? dirname(target.path) : target.path;
-  await openDirectory(path, platform, launch);
+  if (action === 'reveal_file' && !target.isDirectory && platform === 'win32') {
+    // Keep the selection switch and canonical path separate; spawn quotes spaces
+    // without invoking a shell or treating filename punctuation as arguments.
+    await launchFileManager('explorer.exe', ['/select,', target.path], launch);
+  } else if (action === 'reveal_file' && !target.isDirectory && platform === 'darwin') {
+    await launchFileManager('open', ['-R', target.path], launch);
+  } else {
+    // xdg-open has no portable select-file option; open the containing folder.
+    await openDirectory(path, platform, launch);
+  }
   return { path: target.path, openedPath: path };
 }

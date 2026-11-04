@@ -22643,8 +22643,11 @@ import { realpath as realpath2, stat as stat2 } from "node:fs/promises";
 import { dirname, extname, isAbsolute as isAbsolute2, resolve as resolve2 } from "node:path";
 function openDirectory(path, platform = process.platform, launch = spawn) {
   const command = platform === "win32" ? "explorer.exe" : platform === "darwin" ? "open" : "xdg-open";
+  return launchFileManager(command, [path], launch);
+}
+function launchFileManager(command, args, launch) {
   return new Promise((resolve3, reject) => {
-    const child = launch(command, [path], { shell: false, detached: true, stdio: "ignore", windowsHide: false });
+    const child = launch(command, args, { shell: false, detached: true, stdio: "ignore", windowsHide: false });
     child.once("error", reject);
     child.once("spawn", () => {
       child.unref();
@@ -22752,7 +22755,13 @@ async function openLocalPath(action, input, agent, { platform = process.platform
     throw new Error("\u4E3A\u907F\u514D\u6267\u884C\u4EE3\u7801\uFF0C\u4E0D\u652F\u6301\u76F4\u63A5\u6253\u5F00\u53EF\u6267\u884C\u6587\u4EF6\u6216\u811A\u672C\uFF1B\u8BF7\u6253\u5F00\u6240\u5728\u6587\u4EF6\u5939");
   }
   const path = action === "reveal_file" && !target.isDirectory ? dirname(target.path) : target.path;
-  await openDirectory(path, platform, launch);
+  if (action === "reveal_file" && !target.isDirectory && platform === "win32") {
+    await launchFileManager("explorer.exe", ["/select,", target.path], launch);
+  } else if (action === "reveal_file" && !target.isDirectory && platform === "darwin") {
+    await launchFileManager("open", ["-R", target.path], launch);
+  } else {
+    await openDirectory(path, platform, launch);
+  }
   return { path: target.path, openedPath: path };
 }
 

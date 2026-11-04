@@ -41,12 +41,21 @@ test('local files use the active session cwd and one literal non-shell argument 
   }
 }));
 
-test('reveal opens the parent for files and the directory itself for directories', async () => fixture(async ({ current, agent }) => {
-  for (const input of ['report & notes.txt', 'generated.JS', '.']) {
-    const { calls, options } = recorder();
-    const result = await openLocalPath('reveal_file', input, agent, options);
-    assert.equal(result.openedPath, await realpath(current));
-    assert.deepEqual(calls[0][1], [await realpath(current)]);
+test('reveal selects files on Windows and macOS, opens parent on Linux, and opens directories directly', async () => fixture(async ({ current, agent }) => {
+  const unusual = '中文 report, & notes.sql';
+  await writeFile(join(current, unusual), 'document');
+  for (const platform of ['win32', 'darwin', 'linux']) {
+    for (const input of ['report & notes.txt', unusual, 'generated.JS', '.']) {
+      const { calls, options } = recorder(platform);
+      const result = await openLocalPath('reveal_file', input, agent, options);
+      const parent = await realpath(current), file = await realpath(join(current, input));
+      const expected = input === '.' || platform === 'linux' ? [parent]
+        : platform === 'win32' ? ['/select,', file] : ['-R', file];
+      assert.equal(result.openedPath, parent);
+      assert.equal(calls[0][0], platform === 'win32' ? 'explorer.exe' : platform === 'darwin' ? 'open' : 'xdg-open');
+      assert.deepEqual(calls[0][1], expected);
+      assert.equal(calls[0][2].shell, false);
+    }
   }
 }));
 
