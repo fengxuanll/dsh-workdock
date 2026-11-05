@@ -45,6 +45,7 @@ window.__ModuleLoader__.load({
 .dpm-edit .dpm-foot .dpm-danger{font-size:12px;padding:5px 10px}
 .dpm p{font-size:12px;line-height:1.5;margin:6px 0}
 .dpm-edit-note{font-size:11px;line-height:1.45;margin:8px 0 0;opacity:.6}
+.dpm-removed-folder{font-size:11px;line-height:1.45;margin-top:6px;color:var(--dsw-alias-label-secondary,#aaa);overflow-wrap:anywhere}.dpm .dpm-removed-folder .dpm-undo{font-size:11px;line-height:16px;padding:2px 6px}
 .dpm-list{gap:8px;margin:12px 0}
 .dpm-card{padding:10px;border-radius:10px}
 .dpm-path{font-size:12px;margin:4px 0 8px}
@@ -68,7 +69,16 @@ window.__ModuleLoader__.load({
 .dpm-dialog{max-height:88vh}
 .dpm-edit-note{max-height:3.2em;overflow:auto}
 `;
-    const css = baseCss + folderCss + compactCss;
+    // A workspace index, not a marketing dashboard: inherit Harness typography and
+    // theme, reserve blue for current/pinned state, and give paths the most room.
+    const pageCss = `
+.dpm-page{box-sizing:border-box;display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;height:100%;padding:calc(24px + var(--dsh-frame-top-clearance,0px)) 28px 24px max(28px,var(--dsh-frame-leading-clearance,0px));color:var(--dsw-alias-text-primary,#eee);background:var(--dsw-alias-bg-base,#292929)}
+.dpm-page-content{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0}.dpm-table tr.dpm-card{border-radius:0;padding:0;border:0}.dpm-page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.dpm-page h1{font-weight:600;font-size:22px;line-height:1.3;margin:0}.dpm-page-header p{margin:5px 0 0}.dpm-page-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}.dpm-page-toolbar input{flex:1;min-width:160px;max-width:540px}.dpm-page-toolbar label{display:flex;align-items:center;gap:8px;font-size:12px}.dpm-page-toolbar .dpm-save{margin-left:auto}
+.dpm-table-scroll{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--dsw-alias-border-l3,#555);border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}.dpm-table th{position:sticky;top:0;z-index:1;background:var(--dsw-alias-bg-base,#292929);font-weight:500;font-size:12px;color:var(--dsw-alias-label-secondary,#aaa);padding:11px 12px;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table td{padding:13px 12px;vertical-align:top;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table tr:last-child td{border-bottom:0}.dpm-table tbody tr:hover{background:var(--dsw-alias-bg-hover,#ffffff09)}.dpm-table td:first-child{min-width:140px;max-width:240px;overflow-wrap:anywhere}.dpm-table strong{font-weight:600}.dpm-table .dpm-path{min-width:180px;max-width:460px;opacity:.8;margin:0;line-height:1.6}.dpm-table .dpm-count{white-space:nowrap}.dpm-table .dpm-actions{min-width:230px;max-width:330px}.dpm-table .dpm-row{gap:4px}.dpm-table .dpm-row button{font-size:12px;padding:3px 7px}.dpm-table .dpm-badge{display:inline-block}.dpm-table-empty{text-align:center;padding:48px 16px!important}
+.dpm-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:14px;font-size:12px}.dpm-pagination label,.dpm-pagination nav{display:flex;align-items:center;gap:8px}.dpm-page :is(button,input,select):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-page .dpm-error{margin:6px 0}.dpm-page-nav{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
+@media(max-width:700px){.dpm-page{padding:16px 12px}.dpm-page-header{align-items:flex-start;margin-bottom:14px}.dpm-page h1{font-size:18px}.dpm-page-toolbar input{max-width:none}.dpm-page-toolbar .dpm-save{margin-left:0}.dpm-pagination{gap:10px}.dpm-table td,.dpm-table th{padding:10px 8px}}
+`;
+    const css = baseCss + folderCss + compactCss + pageCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建聊天', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New chat', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{setPrimary:'设置主要目录',more:'置顶 / 更多…',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
@@ -83,6 +93,8 @@ window.__ModuleLoader__.load({
     Object.assign(en,{needSession:'Open or create a chat to add, edit or apply a project.'});
     Object.assign(zh,{fileMenu:'文件操作',openFile:'打开文件',revealFile:'打开所在文件夹'});
     Object.assign(en,{fileMenu:'File actions',openFile:'Open file',revealFile:'Open containing folder'});
+    Object.assign(zh,{backToChat:'返回聊天',pageHint:'集中管理项目与工作目录',projectCount:'项目总数',folderCount:'源目录数',actions:'操作',pageSize:'每页',previousPage:'上一页',nextPage:'下一页',pageStatus:'第 {page} / {pages} 页，共 {count} 个项目',loading:'正在加载项目…'});
+    Object.assign(en,{backToChat:'Back to chat',pageHint:'Manage projects and working directories',projectCount:'Total projects',folderCount:'Folders',actions:'Actions',pageSize:'Per page',previousPage:'Previous page',nextPage:'Next page',pageStatus:'Page {page} / {pages}, {count} projects',loading:'Loading projects…'});
     function folderLabel(path, folders) {
       const parts = path.replace(/[\\/]+$/,'').split(/[\\/]/);
       for(let n=1;n<=parts.length;n++) {
@@ -98,7 +110,7 @@ window.__ModuleLoader__.load({
         add&&h('path',{d:'M18 15v7m-3.5-3.5h7'}));
     }
     return {
-      inject: ['slots', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale'],
+      inject: ['slots', 'layout', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register('dsh-workdock', { zh, en }));
         const t = ctx.locale.bind('dsh-workdock');
@@ -289,13 +301,20 @@ window.__ModuleLoader__.load({
           if(hover){const project=matchingProject(hover.workspace);publishHover(project?{...hover,project}:null);}
           return value;
         }
-        function Manager({ sessionId: providedId, dock = false, initialProject = null, initialOpen = false, hiddenLauncher = false, workspaceId, onClose }) {
+        const PAGE_ID = 'dsh-workdock-projects';
+        // This is a native main-panel switch: the sidebar and existing chat stay
+        // owned by Harness, rather than being covered by a fullscreen overlay.
+        function openProjects(){publishTree(null);ctx.layout.selectPanel(PAGE_ID);}
+        function ProjectPage(){return h(Manager,{page:true,initialOpen:true,hiddenLauncher:true});}
+        function Manager({ sessionId: providedId, dock = false, page = false, initialProject = null, initialOpen = false, hiddenLauncher = false, workspaceId, onClose }) {
           const version = useSyncExternalStore(projectSource.subscribe, projectSource.getSnapshot);
           const sessions = useSyncExternalStore(ctx.sessions.list.subscribe, ctx.sessions.list.getSnapshot);
           const sessionId = providedId ?? Object.values(sessions.byId).find(s => (s.retainedBy.mainView ?? 0) > 0)?.id;
           const [open,setOpen]=useState(initialOpen), [state,setState]=useState({projects:[],activeProjectId:null,directoryWarnings:[]});
           const [draft,setDraft]=useState(initialProject), [error,setError]=useState(''), [busy,setBusy]=useState(false);
           const [search,setSearch]=useState(''), [sort,setSort]=useState(()=>{try {return localStorage.getItem('dsh-workdock-sort')||'name';}catch{return 'name';}});
+          const [pageNumber,setPageNumber]=useState(1), [pageSize,setPageSize]=useState(()=>{try {const size=Number(localStorage.getItem('dsh-workdock-page-size'));return [10,25,50,100].includes(size)?size:25;}catch{return 25;}});
+          const [loading,setLoading]=useState(true);
           const [directoryWarnings,setDirectoryWarnings]=useState([]), [removed,setRemoved]=useState(null);
           const dialog=useRef(null), nameInput=useRef(null), generation=useRef(0), lock=useRef(false), checkGeneration=useRef(0);
           const baseline=useRef(JSON.stringify(initialProject)), manualName=useRef(Boolean(initialProject?.title)), undoTimer=useRef(null), draftEpoch=useRef(0);
@@ -310,20 +329,25 @@ window.__ModuleLoader__.load({
           },[dirty]);
           async function refresh(id=sessionId){
             const token=++generation.current;
-            const value=await call(id,{action:'list'});
-            if(token===generation.current&&id===currentId.current)setState(value);
+            setLoading(true);
+            try {const value=await call(id,{action:'list'});
+              if(token===generation.current&&id===currentId.current)setState(value);
+            } finally {if(token===generation.current&&id===currentId.current)setLoading(false);}
           }
           useEffect(()=>{refresh().catch(e=>setError(e.message));return()=>{generation.current++;};},[sessionId,open,version]);
           function close(force=false){
             if(!force&&dirty&&!window.confirm(t('discard')))return;
-            clearUndo();checkGeneration.current++;draftEpoch.current++;setDraft(null);setOpen(false);onClose?.();
+            clearUndo();checkGeneration.current++;draftEpoch.current++;setDraft(null);setError('');
+            if(page){if(!draft)ctx.layout.selectPanel(null);return;}
+            setOpen(false);onClose?.();
           }
           useEffect(()=>{
-            if(!open)return;
+            if(!open||(page&&!draft))return;
             const before=document.activeElement;
             if(!draft)dialog.current?.focus();
             return()=>{if(before?.isConnected)before.focus();};
-          },[open]);
+          },[open,Boolean(draft)]);
+          useEffect(()=>{if(page)dialog.current?.focus();},[]);
           useEffect(()=>{if(open&&draft)nameInput.current?.focus();},[open,Boolean(draft)]);
           async function action(args){
             if(lock.current)return null;
@@ -332,10 +356,6 @@ window.__ModuleLoader__.load({
             try {
               const result=await call(sessionId,args);
               if(workspaceId&&args.action==='remove')await ctx.workspaces.delete(workspaceId);
-              if(args.action==='bind'){
-                const project=state.projects.find(p=>p.id===args.id);
-                announce(t('bound')+': '+project.title+' · '+project.primary);close(true);
-              }
               // A successful mutation stays successful even if refreshing fails.
               if(!['save','bind'].includes(args.action))await refresh().catch(e=>setError(e.message));
               return result;
@@ -407,16 +427,37 @@ window.__ModuleLoader__.load({
           const active=state.projects.find(p=>p.id===state.activeProjectId);
           const query=search.trim().toLowerCase();
           const compare=(a,b)=>a.localeCompare(b);
-          const ordered=state.projects.filter(p=>[p.title,p.primary].some(v=>v.toLowerCase().includes(query))).sort((a,b)=>
+          const ordered=state.projects.filter(p=>[p.title,p.primary,...p.folders].some(v=>v.toLowerCase().includes(query))).sort((a,b)=>
             Number(Boolean(b.pinned))-Number(Boolean(a.pinned))||
             (sort==='recent'?(b.lastUsedAt||0)-(a.lastUsedAt||0):compare(a.title,b.title))||compare(a.id,b.id));
+          const pages=Math.max(1,Math.ceil(ordered.length/pageSize)), currentPage=Math.min(pageNumber,pages);
+          const visible=ordered.slice((currentPage-1)*pageSize,currentPage*pageSize);
+          useEffect(()=>{setPageNumber(n=>Math.min(n,pages));},[pages]);
           const warnings=(items,projectId)=>items.filter(w=>!projectId||w.projectId===projectId).map(w=>h('div',{key:w.path,className:'dpm-error',role:'status'},w.path+': '+w.error));
-          return h('div',{className:'dpm'},h('style',null,css),
-            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock dpm-mini':'dpm-launch',onClick:()=>setOpen(true),title:active?.primary},'▱ '+(dock&&active?active.title:t('title'))),
-            open&&h('div',{className:'dpm-backdrop',onClick:e=>{if(e.target===e.currentTarget&&!busy)close();}},
-              h('section',{className:'dpm-dialog'+(draft?' dpm-edit':''),ref:dialog,tabIndex:-1,role:'dialog','aria-modal':true,'aria-label':t(draft?(draft.id?'edit':'add'):'title'),onKeyDown:keyboard},
-                h('div',{className:'dpm-head'},h('h2',null,t(draft?(draft.id?'edit':'add'):'title')),button('×',()=>close(),{'aria-label':t('close')})),
-                draft?h(React.Fragment,null,
+          const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
+          return h('div',{className:page?'dpm dpm-page':'dpm'},h('style',null,css),
+            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock dpm-mini':'dpm-launch',onClick:dock?()=>publishTree({manage:true,project:active?structuredClone(active):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence}):openProjects,disabled:dock&&(loading||busy||!sessionId),title:dock?t(active?'edit':'add'):active?.primary},'▱ '+(dock&&active?active.title:t('title'))),
+            page&&h('section',{className:'dpm-page-content',ref:draft?undefined:dialog,tabIndex:-1,'aria-label':t('title'),inert:draft?'':undefined},
+              h('header',{className:'dpm-page-header'},h('div',null,h('h1',null,t('title')),h('p',null,t('pageHint')+' · '+t('projectCount')+': '+state.projects.length)),button(t('backToChat'),()=>close())),
+              h('div',{className:'dpm-page-toolbar'},h('input',{value:search,type:'search',placeholder:t('search'),'aria-label':t('search'),onChange:e=>{setSearch(e.target.value);setPageNumber(1);}}),
+                h('label',null,t('sort'),h('select',{'aria-label':t('sort'),value:sort,onChange:e=>{setSort(e.target.value);setPageNumber(1);try{localStorage.setItem('dsh-workdock-sort',e.target.value);}catch{}}},...['name','recent'].map(key=>h('option',{key,value:key},t('order'+key[0].toUpperCase()+key.slice(1)))))),
+                button(t('reload'),()=>action({action:'list'})),button('+ '+t('add'),()=>edit(null),{className:'dpm-save',disabled:busy||!sessionId})),
+              !sessionId&&h('p',null,t('needSession')),
+              error&&!draft&&h('div',{className:'dpm-error',role:'alert'},error),
+              h('div',{className:'dpm-table-scroll','aria-busy':loading},h('table',{className:'dpm-table','aria-label':t('title')},
+                h('thead',null,h('tr',null,...['name','primary','folderCount','actions'].map(key=>h('th',{key,scope:'col'},t(key))))),
+                h('tbody',null,visible.map(p=>h('tr',{className:'dpm-card',key:p.id,'data-project-id':p.id},
+                  h('td',null,h('strong',null,(p.pinned?'⌖ ':'')+p.title),p.id===state.activeProjectId&&h('span',{className:'dpm-badge'},t('active'))),
+                  h('td',null,h('div',{className:'dpm-path',title:p.primary},p.primary),warnings(state.directoryWarnings||[],p.id)),
+                  h('td',{className:'dpm-count',title:p.folders.join('\n')},p.folders.length),h('td',{className:'dpm-actions'},projectActions(p)))),
+                  !visible.length&&h('tr',null,h('td',{colSpan:4,className:'dpm-table-empty',role:'status'},t(loading?'loading':query?'noResults':'empty')))))),
+              h('footer',{className:'dpm-pagination'},h('span',{role:'status','aria-live':'polite'},t('pageStatus').replace('{page}',currentPage).replace('{pages}',pages).replace('{count}',ordered.length)),
+                h('label',null,t('pageSize'),h('select',{'aria-label':t('pageSize'),value:pageSize,onChange:e=>{const size=Number(e.target.value);setPageSize(size);setPageNumber(1);try{localStorage.setItem('dsh-workdock-page-size',String(size));}catch{}}},...[10,25,50,100].map(size=>h('option',{key:size,value:size},size)))),
+                h('nav',{'aria-label':t('title')},button(t('previousPage'),()=>setPageNumber(currentPage-1),{disabled:busy||currentPage<=1}),button(t('nextPage'),()=>setPageNumber(currentPage+1),{disabled:busy||currentPage>=pages})))),
+            open&&draft&&h('div',{className:'dpm-backdrop',onClick:e=>{if(e.target===e.currentTarget&&!busy)close();}},
+              h('section',{className:'dpm-dialog dpm-edit',ref:dialog,tabIndex:-1,role:'dialog','aria-modal':true,'aria-label':t(draft.id?'edit':'add'),onKeyDown:keyboard},
+                h('div',{className:'dpm-head'},h('h2',null,t(draft.id?'edit':'add')),button('×',()=>close(),{'aria-label':t('close')})),
+                h(React.Fragment,null,
                   !sessionId&&h('p',null,t('needSession')),
                   h('label',{className:'dpm-sr-only',htmlFor:'dpm-name'},t('name')),h('div',{className:'dpm-name-field'},h(FolderIcon),h('input',{ref:nameInput,id:'dpm-name',value:draft.title,disabled:busy||!sessionId,onChange:e=>{manualName.current=true;setDraft({...draft,title:e.target.value});}})),
                   h('label',{className:'dpm-label'},t('folders')),
@@ -426,18 +467,9 @@ window.__ModuleLoader__.load({
                     button('×',()=>removeFolder(folder),{className:'dpm-folder-remove','aria-label':t('removeFolder')+': '+folder,title:t('removeFolder')})),
                     warnings(directoryWarnings.filter(w=>w.path===folder)))),
                     button(h(React.Fragment,null,h(FolderIcon,{add:true}),h('span',null,t('addFolder'))),()=>pick(),{className:'dpm-folder-add',disabled:busy||!sessionId})),
-                  removed&&h('div',{role:'status'},t('removedFolder')+': '+removed.folder+' ',button(t('undo'),undo,{className:'dpm-mini'})),
+                  removed&&h('div',{className:'dpm-removed-folder',role:'status'},t('removedFolder')+': '+removed.folder+' ',button(t('undo'),undo,{className:'dpm-undo'})),
                   h('p',{className:'dpm-edit-note',title:t('note')},t('saveNote')),
-                  h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))close(true);},{className:'dpm-danger'}),button(t('cancel'),()=>close(),{className:'dpm-cancel'}),button(t('save'),save,{className:'dpm-save',disabled:busy||!valid}))) : h(React.Fragment,null,
-                  h('div',{className:'dpm-row'},button('+ '+t('add'),()=>edit(null),{disabled:busy||!sessionId}),button(t('reload'),()=>action({action:'list'}))),
-                  !sessionId&&h('p',null,t('needSession')),
-                  h('div',{className:'dpm-row dpm-searchbar'},h('input',{className:'dpm-grow',value:search,placeholder:t('search'),'aria-label':t('search'),onChange:e=>setSearch(e.target.value)}),h('select',{'aria-label':t('sort'),value:sort,onChange:e=>{setSort(e.target.value);try{localStorage.setItem('dsh-workdock-sort',e.target.value);}catch{}}},...['name','recent'].map(key=>h('option',{key,value:key},t('order'+key[0].toUpperCase()+key.slice(1)))))),
-                  !ordered.length&&h('p',null,t(query?'noResults':'empty')),
-                  h('div',{className:'dpm-list'},ordered.map(p=>h('article',{className:'dpm-card',key:p.id},
-                    h('strong',null,(p.pinned?'⌖ ':'')+p.title),p.id===state.activeProjectId&&h('span',{className:'dpm-badge'},t('active')),
-                    h('div',{className:'dpm-path'},p.primary+' · '+p.folders.length+' '+t('folders')),
-                    warnings(state.directoryWarnings||[],p.id),
-                    h('div',{className:'dpm-row'},button(t('bind'),()=>action({action:'bind',id:p.id}),{disabled:busy||!sessionId}),button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)),button(t('newChat'),()=>newChat(p))))))),
+                  h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))close(true);},{className:'dpm-danger'}),button(t('cancel'),()=>close(),{className:'dpm-cancel'}),button(t('save'),save,{className:'dpm-save',disabled:busy||!valid}))),
                 error&&h('div',{className:'dpm-error',role:'alert'},error))));
         }
         // Host Markdown file links are buttons with a decoded native path in title.
@@ -557,9 +589,9 @@ window.__ModuleLoader__.load({
             window.addEventListener('resize',closeMenu);
             return () => {document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);window.removeEventListener('resize',closeMenu);};
           }, [request]);
-          async function sessionFor(workspace,useCurrent=false) {
+          async function sessionFor(workspace) {
             const current=Object.values(ctx.sessions.list.getSnapshot().byId).find(s=>(s.retainedBy.mainView??0)>0)?.id;
-            if(current&&(useCurrent||workspace.sessionIds.includes(current)))return current;
+            if(current&&workspace.sessionIds.includes(current))return current;
             return ctx.sessions.create({workspaceId:workspace.workspaceId});
           }
           async function run(kind) {
@@ -591,13 +623,7 @@ window.__ModuleLoader__.load({
                 if(project)await call(undefined,{action:'remove',id:project.id});
                 await ctx.workspaces.delete(workspace.workspaceId);closeMenu();return;
               }
-              const sessionId=await sessionFor(workspace,kind==='bind');
-              if (kind === 'bind') {
-                if(project)await call(sessionId,{action:'bind',id:project.id});
-                else await call(sessionId,{action:'save',title:workspace.title,folders:[workspace.path],primary:workspace.path});
-                announce(t('bound')+': '+(project?.title||workspace.title)+' · '+(project?.primary||workspace.path));
-                closeMenu();return;
-              }
+              const sessionId=await sessionFor(workspace);
               ctx.uiWorkspace.openSession(sessionId);
               setEditor({sessionId,workspaceId:workspace.workspaceId,project:project ?? {title:workspace.title,folders:[workspace.path],primary:workspace.path}});
             } catch(e) { if(activeRequest.current===target)setError(e.message); }
@@ -614,13 +640,13 @@ window.__ModuleLoader__.load({
             items[next].focus();
           }
           if (!request) return null;
-          if (request.manage) return h(Manager,{key:request.sequence,initialProject:request.add?{title:'',folders:[],primary:''}:null,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
+          if (request.manage) return h(Manager,{key:request.sequence,sessionId:request.sessionId,initialProject:request.add?{title:'',folders:[],primary:''}:request.project??null,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
           if (editor) return h(Manager,{key:request.sequence,...editor,initialProject:editor.project,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
           const item = (key,label=key) => h('button',{key,type:'button',role:'menuitem',disabled:busy,onClick:()=>run(key),className:key==='remove'?'dpm-danger':undefined},t(label));
           return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('title'),style:position,onKeyDown:keyboard},
             h('div',{className:'dpm-menu-title'},request.workspace.title),
-            ...(request.ellipsis ? [item('manage'),item('openFolder'),h('div',{key:'separator',className:'dpm-menu-separator',role:'separator'}),item('edit','rename')] : [item('edit'),item('primary','setPrimary'),item('openFolder')]),item('copy'),item('bind'),item('newChat'),
-            h('div',{className:'dpm-menu-separator',role:'separator'}),item('more'),item('remove',request.ellipsis?'deleteWorkspace':'remove'),error&&h('div',{className:'dpm-error',role:'alert'},error)));
+            item('edit'),item('primary','setPrimary'),item('openFolder'),item('copy'),item('newChat'),
+            h('div',{className:'dpm-menu-separator',role:'separator'}),item('more'),item('remove'),error&&h('div',{className:'dpm-error',role:'alert'},error)));
         }
         function ExperienceOverlay() {
           useSyncExternalStore(noticeSource.subscribe,noticeSource.getSnapshot);
@@ -628,13 +654,66 @@ window.__ModuleLoader__.load({
           const active=Object.values(sessions.byId).some(s=>(s.retainedBy.mainView??0)>0);
           const [retrying,setRetrying]=useState(false);
           return h('div',{className:'dpm'},h('style',null,css),
-            !active&&h('button',{className:'dpm-browse dpm-mini',onClick:()=>publishTree({manage:true,sequence:++requestSequence})},t('title')),
+            !active&&h('button',{className:'dpm-browse dpm-mini',onClick:openProjects},t('title')),
             (notice||syncWarnings.length>0)&&h('div',{className:'dpm-global'},
               notice&&h('div',{role:notice.error?'alert':'status'},notice.text),
               syncWarnings.length>0&&h('div',{role:'status'},h('p',null,t('syncWarning')+': '+syncWarnings.map(w=>typeof w==='string'?w:JSON.stringify(w)).join('\n')),
                 h('button',{className:'dpm-mini',disabled:retrying,onClick:async()=>{setRetrying(true);try{await call(undefined,{action:'list'});}catch(e){announce(e.message,true);}finally{setRetrying(false);}}},t('retrySync'))),
               notice&&h('button',{className:'dpm-mini','aria-label':t('close'),onClick:dismissNotice},'×')));
         }
+        ctx.slots.inject('main',()=>ctx.slots.register({name:'main',key:PAGE_ID,id:PAGE_ID,locale:'dsh-workdock'},ProjectPage));
+        // WorkspaceBrowser exposes no header-action slot. Mount only in its
+        // verified CSS-module structure, never by translated text or button order.
+        ctx.effect(()=>{
+          const mounted=new Map(),addButtons=new Map();
+          const openAddProject=()=>publishTree({manage:true,add:true,sequence:++requestSequence});
+          const style=document.createElement('style');
+          // Native headerActions clips at 60px (two icons). Three actions need
+          // their intrinsic width; leave the search-expanded hidden state intact.
+          style.textContent='.dpm-workspace-actions:not([class*="_headerActionsHidden"]){max-width:none}.dpm-workspace-manage,.dpm-workspace-add{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.dpm-workspace-manage:focus-visible,.dpm-workspace-add:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-workspace-manage svg,.dpm-workspace-add svg{width:16px;height:16px;pointer-events:none}';
+          document.head.append(style);
+          const sync=()=>{
+            for(const [host,button] of mounted)if(!host.isConnected){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();mounted.delete(host);}
+            for(const [host,button] of addButtons)if(!host.isConnected){button.removeEventListener('click',openAddProject);button.remove();addButtons.delete(host);}
+            for(const header of document.querySelectorAll('[class*="_sectionHeader"]')){
+              const token=[...header.classList].find(c=>c.endsWith('_sectionHeader'));
+              if(!token)continue;
+              const prefix=token.slice(0,-'_sectionHeader'.length);
+              if(!header.parentElement?.classList.contains(prefix+'_root'))continue;
+              const host=[...header.children].find(c=>c.classList.contains(prefix+'_headerActions'));
+              if(!host)continue;
+              host.classList.add('dpm-workspace-actions');
+              let button=mounted.get(host);
+              if(!button){
+                button=document.createElement('button');button.type='button';
+                button.className=prefix+'_iconButton dpm-workspace-manage';
+                button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/><path d="M8 11h8M8 15h8"/></svg>';
+                button.addEventListener('click',openProjects);mounted.set(host,button);
+              }
+              if(button.title!==t('title')){button.title=t('title');button.setAttribute('aria-label',t('title'));}
+              const nativeAdd=host.querySelector('button[aria-label="添加工作区"],button[aria-label="Add workspace"]');
+              let add=addButtons.get(host);
+              if(nativeAdd){
+                if(add){add.removeEventListener('click',openAddProject);add.remove();addButtons.delete(host);}
+                add=nativeAdd;
+              }else{
+                if(!add){
+                  add=document.createElement('button');add.type='button';
+                  add.className=prefix+'_iconButton dpm-workspace-add';
+                  add.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/><path d="M12 10v7m-3.5-3.5h7"/></svg>';
+                  add.addEventListener('click',openAddProject);addButtons.set(host,add);
+                }
+                if(add.title!==t('add')){add.title=t('add');add.setAttribute('aria-label',t('add'));}
+                if(add.parentElement!==host||add!==host.lastElementChild)host.append(add);
+              }
+              // Keep native view options first, management next, and add last.
+              if(button.parentElement!==host||button.nextElementSibling!==add)host.insertBefore(button,add);
+            }
+          };
+          const observer=new MutationObserver(sync);
+          observer.observe(document.body,{childList:true,subtree:true,characterData:true});sync();
+          return()=>{observer.disconnect();for(const [host,button] of mounted){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();}mounted.clear();for(const button of addButtons.values()){button.removeEventListener('click',openAddProject);button.remove();}addButtons.clear();style.remove();};
+        });
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-file-menu',order:22}, FileOverlay));

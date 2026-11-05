@@ -17,6 +17,12 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
   const {createRoot}=await import('react-dom/client');
   const root=createRoot(document.getElementById('root'));
   const entries=new Map(),disposers=[],calls=[],sessionListeners=new Set(),started=[],deleted=[],created=[];
+  let selectedPanel=null,showManager=false;
+  const renderHarness=()=>root.render(React.createElement(React.Fragment,null,
+    selectedPanel&&React.createElement(entries.get(selectedPanel)),
+    showManager&&React.createElement(entries.get('dsh-workdock-dock')),
+    React.createElement(entries.get('dsh-workdock-tree-menu')),
+    React.createElement(entries.get('dsh-workdock-experience'))));
   let snapshot={byId:{}},dictionary,selection='D:/one/src',confirmResult=false,confirmations=0,releaseSave=null,warning=true;
   let projects=[
     {id:'z',title:'Zulu',primary:'D:/one/src',folders:['D:/one/src','D:/two/src'],sessionRoots:['D:/one/src'],pinned:false,lastUsedAt:10},
@@ -27,7 +33,8 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
   const ctx={
     effect(fn){disposers.push(fn());},
     locale:{register(_ns,values){dictionary=values.en;},bind(){return key=>dictionary[key];}},
-    slots:{inject(_slot,fn){fn();},register(options,component){entries.set(options.id,component);}},
+    slots:{inject(_slot,fn){fn();},register(options,component){if(options.name!=='sidebar.panellist')entries.set(options.key||options.id,component);}},
+    layout:{selectPanel(id){selectedPanel=id;renderHarness();}},
     sessions:{list:{subscribe(fn){sessionListeners.add(fn);return()=>sessionListeners.delete(fn);},getSnapshot:()=>snapshot},create:async options=>{created.push(options);return 'workspace-chat';}},
     workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'w',title:'Zulu',path:'D:/one/src',sessionIds:[]}]})},create:async()=>({workspaceId:'w'}),delete:async id=>deleted.push(id),rename(){throw Error('redundant rename');}},
     uiWorkspace:{openSession(){},startSession:id=>started.push(id)},
@@ -48,7 +55,7 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
   dom.window.__ModuleLoader__={load({factory}){factory(()=>React).apply(ctx);}};
   dom.window.eval(await readFile(new URL('../client.js',import.meta.url),'utf8'));
   const Manager=entries.get('dsh-workdock-dock'),Overlay=entries.get('dsh-workdock-tree-menu'),Experience=entries.get('dsh-workdock-experience');
-  const render=async(showManager=false)=>act(async()=>root.render(React.createElement(React.Fragment,null,showManager&&React.createElement(Manager),React.createElement(Overlay),React.createElement(Experience))));
+  const render=async(show=false)=>act(async()=>{showManager=show;renderHarness();});
   const click=async(text,scope=document)=>{const node=[...scope.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(node,`Missing button ${text}`);await act(async()=>node.click());};
   const input=async(node,value)=>act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(node,value);node.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
   const key=async(key,extra={})=>{const event=new dom.window.KeyboardEvent('keydown',{key,bubbles:true,cancelable:true,...extra});await act(async()=>document.querySelector('[role=dialog]').dispatchEvent(event));return event;};
@@ -57,14 +64,16 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
   const context=async()=>act(async()=>document.getElementById('row').dispatchEvent(new dom.window.MouseEvent('contextmenu',{bubbles:true,cancelable:true})));
   try{
     await render();
-    await click('Projects');
+    await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));
+    assert.ok(document.querySelector('.dpm-page'));
+    assert.equal(document.querySelector('[role=dialog]'),null);
     assert.deepEqual(names(),['⌖ Pinned','Alpha','Zulu']);
     assert.ok(calls.some(c=>c.args.action==='list'&&!c.sessionId));
     assert.equal([...document.querySelectorAll('button')].find(n=>n.textContent==='+ Add project').disabled,true);
     assert.match(card('Zulu').textContent,/Missing directory/);
     const search=document.querySelector('input[aria-label="Search projects"]');
     for(const query of ['ZULU','ONE/SRC']){await input(search,query);assert.ok(card('Zulu'));}
-    await input(search,'nothing found');assert.match(document.querySelector('[role=dialog]').textContent,/No matching projects/);
+    await input(search,'nothing found');assert.match(document.querySelector('.dpm-page').textContent,/No matching projects/);
     await input(search,'');
     const sort=document.querySelector('select');
     assert.deepEqual([...sort.options].map(o=>o.value),['name','recent']);
@@ -91,13 +100,13 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     assert.ok(document.getElementById('dpm-name'));
     await click('Cancel');
     await act(async()=>{snapshot={byId:{s:{id:'s',retainedBy:{mainView:1}}}};for(const fn of sessionListeners)fn();});
-    await render(true);await click('▱ Projects');await click('Edit project',card('Zulu'));
+    await render(true);await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));await click('Edit project',card('Zulu'));
     assert.equal(document.activeElement.id,'dpm-name');
     assert.deepEqual([...document.querySelectorAll('.dpm-folder-name')].map(n=>n.textContent),['one/src','two/src']);
     assert.match(document.querySelector('.dpm-folder-box').textContent,/Missing directory/);
     const initialConfirms=confirmations;
     await click('Cancel');assert.equal(confirmations,initialConfirms,'unchanged drafts do not confirm');
-    await click('▱ Projects');await click('Edit project',card('Zulu'));
+    await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));await click('Edit project',card('Zulu'));
     await input(document.getElementById('dpm-name'),'Changed');
     confirmResult=false;
     for(const exit of [()=>click('Cancel'),()=>click('×',document.querySelector('.dpm-head')),()=>key('Escape'),()=>act(async()=>document.querySelector('.dpm-backdrop').click())]){
@@ -106,6 +115,11 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     assert.equal(confirmations,initialConfirms+4);
     const unload=new dom.window.Event('beforeunload',{cancelable:true});dom.window.dispatchEvent(unload);assert.equal(unload.defaultPrevented,true);
     await act(async()=>document.querySelector('.dpm-folder-remove').click());
+    const removedNotice=document.querySelector('.dpm-removed-folder');
+    assert.equal(removedNotice.getAttribute('role'),'status');
+    assert.match(removedNotice.textContent,/Folder removed.*D:\/one\/src/);
+    assert.equal(dom.window.getComputedStyle(removedNotice).fontSize,'11px');
+    assert.equal(dom.window.getComputedStyle(removedNotice.querySelector('button')).fontSize,'11px');
     await act(async()=>document.querySelector('.dpm-set-primary').click());
     await click('Undo');
     assert.deepEqual([...document.querySelectorAll('.dpm-source')].map(n=>n.getAttribute('aria-label')),['D:/one/src','D:/two/src']);
@@ -118,16 +132,16 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     await act(async()=>{releaseSave();releaseSave=null;});
     assert.equal(document.querySelector('[role=dialog]'),null);assert.match(document.querySelector('.dpm-global').textContent,/Sidebar offline/);
     warning=false;await click('Retry sidebar sync');assert.doesNotMatch(document.querySelector('.dpm-global')?.textContent||'',/Sidebar offline/);
-    await click('▱ Projects');await click('+ Add project');selection='D:/suggested';await click('Add folder');
+    await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));await click('+ Add project');selection='D:/suggested';await click('Add folder');
     assert.equal(document.getElementById('dpm-name').value,'suggested');
     await input(document.getElementById('dpm-name'),'');selection='D:/second';await click('Add folder');assert.equal(document.getElementById('dpm-name').value,'');
     assert.equal((await key('Enter',{metaKey:true})).defaultPrevented,true);
     assert.equal(calls.filter(c=>c.args.action==='save').length,beforeSaves+1,'invalid shortcut does not save');
     confirmResult=true;await click('Cancel');
-    await click('▱ Projects');await click('Use in this chat',card('Zulu'));
-    assert.equal(document.querySelector('[role=dialog]'),null);assert.match(document.querySelector('.dpm-global [role=status]').textContent,/Zulu.*D:\/one\/src/);
-    await expire(3000);
-    assert.doesNotMatch(document.querySelector('.dpm-global')?.textContent||'',/Zulu/,'the applied-project notice closes itself after 3s');
+    await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));
+    assert.ok(![...document.querySelectorAll('button')].some(b=>b.textContent==='Use in this chat'));
+    assert.ok(!calls.some(c=>c.args.action==='bind'),'browsing cannot bind the current chat');
+    await click('Back to chat');
     await context();await click('Edit project');await click('Remove project');
     assert.deepEqual(deleted,['w','w'],'removing from a tree editor also unregisters its workspace');
   }finally{

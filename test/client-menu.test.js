@@ -13,11 +13,18 @@ test('left project tree context menu targets workspace, edits directories and di
   const { createRoot } = await import('react-dom/client');
   const root=createRoot(document.getElementById('overlay'));
   const disposers=[], entries=new Map(), calls=[], renames=[], opens=[], created=[];
+  let selectedPanel=null, showManager=false;
+  const renderHarness=()=>root.render(React.createElement(React.Fragment,null,
+    selectedPanel&&React.createElement(entries.get(selectedPanel)),
+    showManager&&React.createElement(entries.get('dsh-workdock-dock')),
+    React.createElement(entries.get('dsh-workdock-tree-menu')),
+    React.createElement(entries.get('dsh-workdock-primary-tooltip'))));
   let dictionary, failAction = null, activeProjectId = 'p1', byId={s1:{id:'s1',retainedBy:{mainView:1}}};
   let projects=[{id:'p1',title:'Project one',primary:'D:/main',folders:['D:/main','D:/reference'],sessionRoots:['D:/main'],revision:1,pinned:false}];
   const workspace={workspaceId:'w1',title:'Project one',path:'D:/main',sessionIds:['s1']};
   const ctx={
-    slots:{inject(_name,callback){callback();},register(options,component){entries.set(options.id,component);return()=>{};}},
+    slots:{inject(_name,callback){callback();},register(options,component){if(options.name!=='sidebar.panellist')entries.set(options.key||options.id,component);return()=>{};}},
+    layout:{selectPanel(id){selectedPanel=id;renderHarness();}},
     locale:{register(_ns,values){dictionary=values.zh;return()=>{};},bind(){return key=>dictionary[key];}},
     sessions:{list:{subscribe:()=>()=>{},getSnapshot:()=>({byId})},create:async options=>{created.push(options);return 'new-session';}},
     workspaces:{list:{getSnapshot:()=>({items:[workspace]})},rename:async(...args)=>{renames.push(args);},delete:async()=>{},create:async()=>workspace},
@@ -62,7 +69,7 @@ test('left project tree context menu targets workspace, edits directories and di
   addWorkspace.onclick=()=>nativeAddClicks++;
   addWorkspace.addEventListener('pointerdown',()=>nativeAddPointers++);
   try{
-    await act(async()=>root.render(React.createElement(React.Fragment,null,React.createElement(Overlay),React.createElement(Tooltip))));
+    await act(async()=>renderHarness());
     // The toolbar action opens a blank add form, including nested icon clicks.
     await act(async()=>{
       addWorkspace.firstChild.dispatchEvent(new dom.window.MouseEvent('pointerdown',{button:0,bubbles:true}));
@@ -89,6 +96,8 @@ test('left project tree context menu targets workspace, edits directories and di
     assert.equal(context('#unknown').defaultPrevented,false);
     await act(async()=>assert.equal(context('#project-label').defaultPrevented,true));
     assert.ok(document.querySelector('[role=menu]'));
+    const contextMenuMarkup=document.querySelector('[role=menu]').innerHTML;
+    assert.ok(![...document.querySelectorAll('[role=menuitem]')].some(b=>b.textContent==='用于当前聊天'));
     assert.equal(document.activeElement.textContent,'编辑项目');
     await act(async()=>document.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true})));
     assert.equal(document.activeElement.textContent,'设置主要目录');
@@ -148,13 +157,21 @@ test('left project tree context menu targets workspace, edits directories and di
     await act(async()=>row.dispatchEvent(new dom.window.MouseEvent('mouseout',{bubbles:true,relatedTarget:document.body})));
     assert.equal(document.querySelector('[role=tooltip]'),null);
     assert.equal(row.getAttribute('aria-describedby'),null);
-    // The project row ellipsis exposes management and file-manager actions.
+    // Both triggers share identical menu entries, order, separators and styles.
     await act(async()=>document.getElementById('native-menu').click());
-    assert.ok([...document.querySelectorAll('[role=menuitem]')].some(node=>node.textContent==='项目管理'));
-    await click('项目管理');
-    assert.ok(document.querySelector('[role=dialog]'));
-    assert.equal(document.querySelector('#dpm-name').value,'Project one','row management keeps targeting the selected project');
-    await click('×');
+    assert.equal(document.querySelector('[role=menu]').innerHTML,contextMenuMarkup);
+    assert.equal(document.querySelector('[role=menu]').className,'dpm-menu');
+    assert.ok(![...document.querySelectorAll('[role=menuitem]')].some(node=>node.textContent==='项目管理'));
+    assert.ok([...document.querySelectorAll('[role=menuitem]')].some(node=>node.textContent==='编辑项目'));
+    await click('编辑项目');
+    assert.equal(selectedPanel,null);
+    assert.equal(document.querySelector('.dpm-page'),null);
+    assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'编辑项目');
+    assert.equal(document.querySelector('#dpm-name').value,projects[0].title);
+    assert.deepEqual([...document.querySelectorAll('.dpm-source')].map(n=>n.getAttribute('aria-label')),projects[0].folders);
+    await click('取消');
+    assert.equal(document.querySelector('[role=dialog]'),null);
+    assert.equal(selectedPanel,null);
     await act(async()=>document.getElementById('native-menu').click());
     await click('在资源管理器中打开');
     assert.ok(calls.some(call=>call.args.action==='open_folder'&&call.args.workspaceId==='w1'));
@@ -183,21 +200,22 @@ test('left project tree context menu targets workspace, edits directories and di
     assert.equal(document.querySelector('[role=menu]'),null);
     assert.equal(calls.filter(c=>c.args.action==='save').length,savesBefore);
     assert.equal(entries.has('dsh-workdock'),false,'sidebar footer launcher must not be registered');
-    const Manager=entries.get('dsh-workdock-dock');
-    await act(async()=>root.render(React.createElement(Manager)));
-    await click('▱ 项目管理');
+    showManager=true;
+    await act(async()=>renderHarness());
+    await act(async()=>ctx.layout.selectPanel('dsh-workdock-projects'));
+    assert.equal(selectedPanel,'dsh-workdock-projects');
     await click('编辑项目');
     await click('取消');
     assert.equal(document.querySelector('[role=dialog]'),null);
-    // Save entered from the normal manager also closes the whole dialog.
-    await click('▱ 项目管理');
+    assert.ok(document.querySelector('.dpm-page'),'cancel returns to the existing project page');
     await click('编辑项目');
     await click('保存');
     assert.equal(document.querySelector('[role=dialog]'),null);
-    await click('▱ 项目管理');
-    assert.equal(document.querySelector('#dpm-name'),null,'reopening shows the list, not a stale editor');
-    await click('×');
-    await act(async()=>root.render(React.createElement(Overlay)));
+    assert.ok(document.querySelector('.dpm-page'),'save retains the native list');
+    assert.equal(document.querySelector('#dpm-name'),null,'list does not retain a stale editor');
+    await click('返回聊天');
+    showManager=false;
+    await act(async()=>renderHarness());
     byId={};sessionsSnapshot={byId};
     await act(async()=>addWorkspace.click());
     assert.match(document.querySelector('[role=dialog]').textContent,/请先打开或创建一个聊天/);
