@@ -5,7 +5,8 @@ const root=new URL('../',import.meta.url);
 const [react,reactDOM,client]=await Promise.all(['node_modules/react/umd/react.development.js','node_modules/react-dom/umd/react-dom.development.js','client.js'].map(path=>readFile(new URL(path,root),'utf8')));
 const inline=text=>text.replace(/<\/script/gi,'<\\/script');
 const fixture=String.raw`
-const h=React.createElement,entries=new Map(),disposers=[],requests=[];
+const h=React.createElement,entries=new Map(),disposers=[],requests=[],createdSessions=[],openedSessions=[],navigation=[];
+let failSession=false;
 let dictionary,selectPanel;
 const snapshot={byId:{s1:{id:'s1',retainedBy:{mainView:1}}}};
 let projects=Array.from({length:67},(_,i)=>({id:'p'+i,title:['运营业绩看板','报文解析工具','仓储库存服务','订单同步','项目管理插件'][i%5]+' '+String(i+1).padStart(2,'0'),primary:'E:/Workspace/Projects/project-'+String(i+1).padStart(2,'0'),folders:['E:/Workspace/Projects/project-'+String(i+1).padStart(2,'0'),'D:/Reference/shared-'+i],sessionRoots:[],pinned:i===0,lastUsedAt:100-i,revision:1}));
@@ -13,10 +14,10 @@ const ctx={
  effect(fn){disposers.push(fn());},
  locale:{register(ns,value){dictionary=value.zh;},bind(){return key=>dictionary[key];}},
  slots:{inject(name,fn){fn();},register(options,component){entries.set(options.id||options.key,{options,component});return()=>{};}},
- layout:{selectPanel(id){selectPanel(id);}},
- sessions:{list:{getSnapshot:()=>snapshot,subscribe:()=>()=>{}},create:async()=> 's1'},
+ layout:{selectPanel(id){navigation.push('panel:'+id);selectPanel(id);}},
+ sessions:{list:{getSnapshot:()=>snapshot,subscribe:()=>()=>{}},create:async args=>{createdSessions.push(args);await new Promise(resolve=>setTimeout(resolve,40));if(failSession)throw Error('Session creation failed');return 'new-'+createdSessions.length;}},
  workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'w1',title:'运营业绩看板 01',path:'E:/Workspace/Projects/project-01',sessionIds:['s1']}]})},create:async()=>({workspaceId:'w1'}),delete:async()=>{}},
- uiWorkspace:{openSession(){},startSession(){}},
+ uiWorkspace:{openSession(id){if(id.startsWith('new-')){if(navigation.at(-1)!=='panel:null')throw Error('session opened before leaving project page');navigation.push('open:'+id);openedSessions.push(id);}},startSession(){throw Error('fire-and-forget session creation must not be used');}},
  remote:{directoryPicker:{pick:async()=>({ok:true,value:'E:/Workspace/Projects/new-source'})}}
 };
 window.fetch=async(url,options)=>{
@@ -108,6 +109,15 @@ const input=async(node,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement
  verify('header and toolbar do not overlap',document.querySelector('.dpm-page-header').getBoundingClientRect().bottom<=document.querySelector('.dpm-page-toolbar').getBoundingClientRect().top);
  verify('footer stays inside main viewport',document.querySelector('.dpm-pagination').getBoundingClientRect().bottom<=innerHeight);
  verify('only list requests while browsing',requests.filter(r=>!['list','check_directories'].includes(r.args.action)).length===0);
+ verify('new-session label replaces new-chat label',dictionary.newChat==='新建会话'&&!document.querySelector('tbody').textContent.includes('新建聊天'));
+ failSession=true;await click(dictionary.newChat,document.querySelector('tbody tr'));
+ verify('session creation failure stays on page with visible error',document.querySelector('.dpm-page')&&document.querySelector('.dpm-error')?.textContent.includes('Session creation failed')&&openedSessions.length===0);
+ failSession=false;await click(dictionary.newChat,document.querySelector('tbody tr'));
+ verify('page creates and opens fresh session after returning to conversation',!document.querySelector('.dpm-page')&&createdSessions.at(-1).workspaceId==='w1'&&openedSessions.at(-1)==='new-2'&&navigation.at(-1)==='open:new-2');
+ document.querySelector('[data-row-key="workspace:w1"]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:100,clientY:130}));await wait();
+ await click(dictionary.newChat,document.querySelector('[role=menu]'));
+ verify('project menu creates another fresh session instead of reusing current',openedSessions.at(-1)==='new-3'&&createdSessions.length===3&&!document.querySelector('[role=menu]'));
+ manage.click();await wait();
  document.documentElement.dataset.selfCheck='passed';
  }catch(error){results.push({name:error.message,pass:false});document.documentElement.dataset.selfCheck='failed';}
  const panel=document.createElement('pre');panel.id='self-check';panel.textContent=JSON.stringify(results,null,2);panel.hidden=true;document.body.append(panel);

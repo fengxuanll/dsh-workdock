@@ -19,8 +19,8 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
   for(const [key,value]of Object.entries(storage))dom.window.localStorage.setItem(key,value);
   const {createRoot}=await import('react-dom/client');
   const root=createRoot(document.getElementById('root'));
-  const entries=new Map(),registrations=[],disposers=[],requests=[],selections=[],created=[],workspaceCalls=[],started=[];
-  let selected=null,dictionary,fail=null;
+  const entries=new Map(),registrations=[],disposers=[],requests=[],selections=[],created=[],workspaceCalls=[],started=[],opened=[],events=[];
+  let selected=null,dictionary,fail=null,createGate;
   const snapshot={byId:session?{s:{id:'s',retainedBy:{mainView:1}}}:{}};
   const render=()=>root.render(React.createElement(React.Fragment,null,
     React.createElement(entries.get('conversation.composer.dock:dsh-workdock-dock'),{dock:true,sessionId:session?'s':undefined}),
@@ -31,10 +31,10 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
     effect(fn){disposers.push(fn());},
     locale:{register(_ns,values){dictionary=values.en;},bind(){return key=>dictionary[key];}},
     slots:{inject(_name,fn){fn();},register(options,component){registrations.push(options);entries.set(`${options.name}:${options.key||options.id}`,component);return()=>{};}},
-    layout:{selectPanel(id){selected=id;selections.push(id);render();}},
-    sessions:{list:{getSnapshot:()=>snapshot,subscribe:()=>()=>{}},create:async args=>{created.push(args);return 'new';}},
+    layout:{selectPanel(id){selected=id;selections.push(id);events.push('panel:'+id);render();}},
+    sessions:{list:{getSnapshot:()=>snapshot,subscribe:()=>()=>{}},create:async args=>{created.push(args);events.push('create');if(createGate)await createGate;if(fail==='session')throw Error('Session creation failed');const id='new-'+created.length;events.push('created:'+id);return id;}},
     workspaces:{list:{getSnapshot:()=>({items:[]})},create:async args=>{workspaceCalls.push(args);return {workspaceId:'w'};},delete:async()=>{}},
-    uiWorkspace:{startSession:id=>started.push(id),openSession(){}},
+    uiWorkspace:{startSession:id=>started.push(id),openSession(id){assert.equal(selected,null,'return to conversation before opening the created session');opened.push(id);events.push('open:'+id);}},
     remote:{directoryPicker:{pick:async()=>({ok:true,value:'D:/picked'})}},
   };
   dom.window.fetch=async(_url,options)=>{
@@ -61,8 +61,8 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
   const ids=()=>rows().map(n=>n.dataset.projectId);
   const status=()=>document.querySelector('.dpm-pagination [role=status]').textContent;
   const open=async()=>act(async()=>ctx.layout.selectPanel(PAGE));
-  return {dom,ctx,registrations,requests,selections,created,workspaceCalls,started,button,click,change,input,search,rows,ids,status,open,
-    setProjects(value){projects=value;},setFailure(value){fail=value;},dispose(){for(const fn of disposers.splice(0))fn?.();}};
+  return {dom,ctx,registrations,requests,selections,created,workspaceCalls,started,opened,events,button,click,change,input,search,rows,ids,status,open,
+    setProjects(value){projects=value;},setFailure(value){fail=value;},setCreateGate(value){createGate=value;},dispose(){for(const fn of disposers.splice(0))fn?.();}};
 }
 
 test('native main page and sidebar entry browse without chat side effects; paging/search/sort are deterministic',async t=>{
@@ -218,12 +218,27 @@ test('composer chip without an associated project opens a blank add form, never 
   assert.deepEqual(h.selections,[]);await h.click('Cancel');
 });
 
-test('invalid stored size defaults safely; removed bind entry stays absent and new chat returns to conversation',async t=>{
+test('new session waits for creation, prevents double clicks and keeps page visible on failure',async t=>{
+  const h=await harness(t);await h.open();
+  let finish;h.setCreateGate(new Promise(resolve=>{finish=resolve;}));
+  const row=h.rows()[0],primary=fixtures().find(p=>p.id===row.dataset.projectId).primary;
+  await h.click('New session',row);
+  assert.equal(h.created.length,1);assert.equal(h.workspaceCalls[0].path,primary);
+  assert.ok(document.querySelector('.dpm-page'));assert.deepEqual(h.opened,[]);assert.equal(h.selections.at(-1),PAGE);
+  assert.equal(h.button('New session',row).disabled,true);await h.click('New session',row);assert.equal(h.created.length,1);
+  await act(async()=>finish());assert.deepEqual(h.opened,['new-1']);assert.equal(h.events.at(-1),'open:new-1');assert.equal(document.querySelector('.dpm-page'),null);
+  await h.open();h.setCreateGate(null);h.setFailure('session');await h.click('New session',h.rows()[0]);
+  assert.ok(document.querySelector('.dpm-page'));assert.match(document.querySelector('.dpm-error').textContent,/Session creation failed/);assert.equal(h.opened.length,1);
+  h.setFailure(null);await h.click('New session',h.rows()[0]);assert.deepEqual(h.opened,['new-1','new-3']);assert.equal(h.created.length,3);assert.equal(h.events.at(-1),'open:new-3');
+});
+
+test('invalid stored size defaults safely; removed bind entry stays absent and new session returns to conversation',async t=>{
   const h=await harness(t,{storage:{'dsh-workdock-page-size':'0'}});
   await h.open();assert.equal(document.querySelector('select[aria-label="Per page"]').value,'25');
   assert.ok(![...document.querySelectorAll('button')].some(b=>b.textContent==='Use in this chat'));
   assert.ok(!h.requests.some(r=>r.args.action==='bind'));
-  await h.click('New chat',h.rows()[0]);assert.equal(h.selections.at(-1),null);
-  assert.deepEqual(h.started,['w']);assert.equal(h.workspaceCalls.length,1);assert.deepEqual(h.created,[]);
+  await h.click('New session',h.rows()[0]);assert.equal(h.selections.at(-1),null);
+  assert.deepEqual(h.started,[]);assert.equal(h.workspaceCalls.length,1);assert.equal(h.created.length,1);assert.equal(h.created[0].workspaceId,'w');
+  assert.deepEqual(h.opened,['new-1']);assert.equal(h.events.at(-1),'open:new-1');
   assert.ok(h.requests.some(r=>r.args.action==='touch'&&!r.sessionId));
 });

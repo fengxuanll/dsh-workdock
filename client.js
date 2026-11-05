@@ -79,8 +79,8 @@ window.__ModuleLoader__.load({
 @media(max-width:700px){.dpm-page{padding:16px 12px}.dpm-page-header{align-items:flex-start;margin-bottom:14px}.dpm-page h1{font-size:18px}.dpm-page-toolbar input{max-width:none}.dpm-page-toolbar .dpm-save{margin-left:0}.dpm-pagination{gap:10px}.dpm-table td,.dpm-table th{padding:10px 8px}}
 `;
     const css = baseCss + folderCss + compactCss + pageCss;
-    const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建聊天', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
-    const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New chat', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
+    const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
+    const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{setPrimary:'设置主要目录',more:'置顶 / 更多…',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
     Object.assign(en,{setPrimary:'Set primary directory',more:'Pin / more…',nativeUnavailable:'The host project menu is unavailable. Use the project row menu button.',removeTreeConfirm:'Remove this project and its directory settings from the sidebar? Files and chat history will be kept.'});
     Object.assign(zh,{manage:'项目管理',openFolder:'在资源管理器中打开',rename:'重命名',deleteWorkspace:'删除工作区'});
@@ -148,6 +148,14 @@ window.__ModuleLoader__.load({
           getSnapshot: () => treeRequest,
         };
         function publishTree(value) { publishHover(null);treeRequest = value; for (const listener of treeListeners) listener(); }
+        async function openNewSession(workspaceId,beforeOpen) {
+          // startSession is fire-and-forget and may reuse a blank session. Closing
+          // the main panel immediately after it also aborts its pending navigation.
+          const sessionId=await ctx.sessions.create({workspaceId});
+          beforeOpen();
+          ctx.layout.selectPanel(null);
+          ctx.uiWorkspace.openSession(sessionId);
+        }
         let allowNativeMenu = false;
         ctx.effect(() => {
           // Native HoverCard owns an outer span and renders its card in a portal.
@@ -409,7 +417,7 @@ window.__ModuleLoader__.load({
           async function save(){if(!valid||lock.current)return;if(await action({action:'save',...draft}))close(true);}
           async function newChat(p){
             if(lock.current)return;lock.current=true;setBusy(true);setError('');
-            try {await call(undefined,{action:'touch',id:p.id});const workspace=await ctx.workspaces.create({path:p.primary});ctx.uiWorkspace.startSession(workspace.workspaceId);close(true);}
+            try {await call(undefined,{action:'touch',id:p.id});const workspace=await ctx.workspaces.create({path:p.primary});await openNewSession(workspace.workspaceId,()=>close(true));}
             catch(e){setError(e.message);}finally{lock.current=false;setBusy(false);}
           }
           function keyboard(e){
@@ -617,7 +625,7 @@ window.__ModuleLoader__.load({
               if (kind === 'copy') {await copyPath(project?.primary||workspace.path);closeMenu();return;}
               if (kind === 'newChat') {
                 if(project)await call(undefined,{action:'touch',id:project.id});
-                ctx.uiWorkspace.startSession(workspace.workspaceId);closeMenu();return;
+                await openNewSession(workspace.workspaceId,closeMenu);return;
               }
               if (kind === 'remove') {
                 if(project)await call(undefined,{action:'remove',id:project.id});

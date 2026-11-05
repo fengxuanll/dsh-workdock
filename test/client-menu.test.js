@@ -216,6 +216,13 @@ test('left project tree context menu targets workspace, edits directories and di
     await click('返回聊天');
     showManager=false;
     await act(async()=>renderHarness());
+    const createdBefore=created.length;
+    await act(async()=>context('#project-label'));
+    assert.ok(![...document.querySelectorAll('[role=menuitem]')].some(b=>b.textContent==='新建聊天'));
+    await click('新建会话');
+    assert.equal(created.length,createdBefore+1,'menu explicitly creates even with an existing workspace session');
+    assert.equal(created.at(-1).workspaceId,'w1');assert.equal(opens.at(-1),'new-session');assert.equal(selectedPanel,null);
+    assert.equal(document.querySelector('[role=menu]'),null);
     byId={};sessionsSnapshot={byId};
     await act(async()=>addWorkspace.click());
     assert.match(document.querySelector('[role=dialog]').textContent,/请先打开或创建一个聊天/);

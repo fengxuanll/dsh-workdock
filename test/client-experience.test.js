@@ -37,7 +37,7 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     layout:{selectPanel(id){selectedPanel=id;renderHarness();}},
     sessions:{list:{subscribe(fn){sessionListeners.add(fn);return()=>sessionListeners.delete(fn);},getSnapshot:()=>snapshot},create:async options=>{created.push(options);return 'workspace-chat';}},
     workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'w',title:'Zulu',path:'D:/one/src',sessionIds:[]}]})},create:async()=>({workspaceId:'w'}),delete:async id=>deleted.push(id),rename(){throw Error('redundant rename');}},
-    uiWorkspace:{openSession(){},startSession:id=>started.push(id)},
+    uiWorkspace:{openSession:id=>started.push(id),startSession(){throw Error('must await explicit session creation');}},
     remote:{directoryPicker:{pick:async()=>({ok:true,value:selection})}},
   };
   dom.window.fetch=async(_url,options)=>{
@@ -88,15 +88,17 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     await click('Copy primary path',card('Zulu'));assert.equal(copied,'D:/one/src');
     assert.match(document.querySelector('.dpm-global [role=status]').textContent,/Path copied/);
     await expire(3000);assert.doesNotMatch(document.querySelector('.dpm-global')?.textContent||'',/Path copied/,'status notices dismiss themselves after 3s');
-    await click('New chat',card('Zulu'));assert.deepEqual(started,['w']);
+    assert.deepEqual(created,[],'passive browsing must not create sessions');
+    await click('New session',card('Zulu'));assert.deepEqual(started,['workspace-chat']);
+    assert.equal(created.length,1,'explicit new-session action creates one session');
     assert.equal(calls.find(c=>c.args.action==='touch').sessionId,undefined);
     await context();await click('Open folder in file manager');
     assert.equal(calls.at(-1).args.action,'open_folder');assert.equal(calls.at(-1).sessionId,undefined);
     await context();confirmResult=true;await click('Remove project');assert.deepEqual(deleted,['w']);
     assert.equal(calls.at(-1).sessionId,undefined);
-    assert.deepEqual(created,[],'browsing, opening and deleting must not create a chat');
+    assert.equal(created.length,1,'opening folders and deleting must not create additional sessions');
     await context();await click('Edit project');
-    assert.deepEqual(JSON.parse(JSON.stringify(created)),[{workspaceId:'w'}]);
+    assert.deepEqual(JSON.parse(JSON.stringify(created)),[{workspaceId:'w'},{workspaceId:'w'}]);
     assert.ok(document.getElementById('dpm-name'));
     await click('Cancel');
     await act(async()=>{snapshot={byId:{s:{id:'s',retainedBy:{mainView:1}}}};for(const fn of sessionListeners)fn();});
