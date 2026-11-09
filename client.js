@@ -104,8 +104,6 @@ window.__ModuleLoader__.load({
     Object.assign(zh,{discard:'放弃未保存的修改？',search:'搜索项目',noResults:'没有匹配的项目。',sort:'项目排序',orderName:'名称',orderRecent:'最近使用',copy:'复制主要目录路径',copied:'已复制路径',clipboardUnavailable:'剪贴板不可用。',undo:'撤销',removedFolder:'已移除目录',bound:'已应用项目',syncWarning:'侧边栏同步需要重试',retrySync:'重试侧边栏同步'});
     Object.assign(zh,{needSession:'请先打开或创建一个聊天，再添加、编辑或切换项目。'});
     Object.assign(en,{needSession:'Open or create a chat to add, edit or apply a project.'});
-    Object.assign(zh,{fileMenu:'文件操作',openFile:'打开文件',revealFile:'打开所在文件夹'});
-    Object.assign(en,{fileMenu:'File actions',openFile:'Open file',revealFile:'Open containing folder'});
     Object.assign(zh,{backToChat:'返回聊天',pageHint:'集中管理项目与工作目录',projectCount:'项目总数',folderCount:'源目录数',actions:'操作',pageSize:'每页',previousPage:'上一页',nextPage:'下一页',pageStatus:'第 {page} / {pages} 页，共 {count} 个项目',loading:'正在加载项目…'});
     Object.assign(en,{backToChat:'Back to chat',pageHint:'Manage projects and working directories',projectCount:'Total projects',folderCount:'Folders',actions:'Actions',pageSize:'Per page',previousPage:'Previous page',nextPage:'Next page',pageStatus:'Page {page} / {pages}, {count} projects',loading:'Loading projects…'});
     Object.assign(zh,{colorLabel:'颜色标记',colorNone:'无颜色',colorSaved:'颜色标记已更新',colorCustom:'自定义颜色',colorPicker:'选择自定义颜色',colorHex:'HEX 色值',colorHexHint:'格式：#RRGGBB，如 #FF8800',colorApply:'应用',red:'红色',orange:'橙色',yellow:'黄色',green:'绿色',blue:'蓝色',purple:'紫色'});
@@ -761,84 +759,6 @@ window.__ModuleLoader__.load({
                   h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))close(true);},{className:'dpm-danger'}),button(t('cancel'),()=>close(),{className:'dpm-cancel'}),button(t('save'),save,{className:'dpm-save',disabled:busy||!valid}))),
                 error&&h('div',{className:'dpm-error',role:'alert'},error))));
         }
-        // Host Markdown file links are buttons with a decoded native path in title.
-        // Restrict interception to chat content; never infer paths from visible labels.
-        let fileRequest = null;
-        const fileListeners = new Set();
-        const fileSource = {subscribe(fn){fileListeners.add(fn);return()=>fileListeners.delete(fn);},getSnapshot:()=>fileRequest};
-        function publishFile(value){fileRequest=value;for(const fn of fileListeners)fn();}
-        function fileTarget(target) {
-          const element=target?.closest?.('button[title],a[href]');
-          const chat=element?.closest('[data-conversation-region="chat"]');
-          const sessionId=chat?.closest('[data-conversation-session]')?.getAttribute('data-conversation-session');
-          if(!sessionId)return;
-          let path;
-          if(element.matches('button[class*="_fileLink_"]'))path=element.getAttribute('title');
-          else if(element.matches('button[title^="@"]')) {
-            const raw=element.getAttribute('title');
-            path=raw.startsWith('@"')&&raw.endsWith('"')?raw.slice(2,-1):raw.slice(1);
-          } else if(element.matches('a[href]')) {
-            const href=element.getAttribute('href');
-            if(href.startsWith('dsh-resource://file/session/')) {
-              try {const url=new URL(href),parts=url.pathname.split('/');
-                if(decodeURIComponent(parts[2])!==sessionId)return;
-                path=parts.slice(3).map(decodeURIComponent).join('/');
-              }catch{return;}
-            } else if(!/^[a-z][a-z\d+.-]*:/i.test(href)||/^[a-z]:[\\/]/i.test(href)) {
-              if(href.startsWith('#')||href.startsWith('//'))return;
-              try{path=decodeURIComponent(href.replace(/#L\d+(?:-L?\d+)?$/i,''));}catch{return;}
-            }
-          }
-          if(!path||/[\u0000-\u001f]/.test(path))return;
-          return {path,sessionId,trigger:element};
-        }
-        ctx.effect(()=>{
-          const open=event=>{
-            if(event.type==='keydown'&&event.key!=='ContextMenu'&&!(event.key==='F10'&&event.shiftKey))return;
-            const target=fileTarget(event.target);if(!target)return;
-            event.preventDefault();event.stopPropagation();publishTree(null);
-            const rect=target.trigger.getBoundingClientRect();
-            publishFile({...target,x:event.type==='keydown'?rect.left:event.clientX,y:event.type==='keydown'?rect.bottom:event.clientY});
-          };
-          document.addEventListener('contextmenu',open,true);document.addEventListener('keydown',open,true);
-          return()=>{document.removeEventListener('contextmenu',open,true);document.removeEventListener('keydown',open,true);publishFile(null);};
-        });
-        function FileOverlay() {
-          const request=useSyncExternalStore(fileSource.subscribe,fileSource.getSnapshot);
-          const menu=useRef(null),active=useRef(request);active.current=request;
-          const [position,setPosition]=useState({left:8,top:8}),[busy,setBusy]=useState(false),[error,setError]=useState('');
-          useEffect(()=>{
-            setBusy(false);setError('');if(!request)return;
-            const rect=menu.current?.getBoundingClientRect();
-            setPosition({left:Math.max(8,Math.min(request.x,window.innerWidth-(rect?.width||206)-8)),top:Math.max(8,Math.min(request.y,window.innerHeight-(rect?.height||130)-8))});
-            menu.current?.querySelector('button')?.focus();
-            const outside=e=>{if(!menu.current?.contains(e.target))publishFile(null);};
-            const escape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();publishFile(null);request.trigger.focus();}};
-            const close=()=>publishFile(null);
-            document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);
-            window.addEventListener('resize',close);document.addEventListener('scroll',close,true);
-            return()=>{document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);window.removeEventListener('resize',close);document.removeEventListener('scroll',close,true);};
-          },[request]);
-          if(!request)return null;
-          async function run(action){
-            if(busy)return;const target=request;setBusy(true);setError('');
-            try{await call(target.sessionId,{action,path:target.path});if(active.current===target){publishFile(null);target.trigger.focus();}}
-            catch(e){if(active.current===target)setError(e.message);}
-            finally{if(active.current===target)setBusy(false);}
-          }
-          function keyboard(e){
-            if(!['ArrowDown','ArrowUp','Home','End','Tab'].includes(e.key))return;
-            const items=[...menu.current.querySelectorAll('[role=menuitem]:not(:disabled)')];if(!items.length)return;
-            e.preventDefault();const current=items.indexOf(document.activeElement);
-            const next=e.key==='Home'?0:e.key==='End'?items.length-1:(current+(e.key==='ArrowUp'||(e.key==='Tab'&&e.shiftKey)?-1:1)+items.length)%items.length;
-            items[next].focus();
-          }
-          return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('fileMenu'),style:position,onKeyDown:keyboard},
-            h('div',{className:'dpm-menu-title',title:request.path},request.path),
-            h('button',{type:'button',role:'menuitem',disabled:busy,onClick:()=>run('open_file')},t('openFile')),
-            h('button',{type:'button',role:'menuitem',disabled:busy,onClick:()=>run('reveal_file')},t('revealFile')),
-            error&&h('div',{className:'dpm-error',role:'alert'},error)));
-        }
         function PrimaryDirectoryTooltip() {
           const value=useSyncExternalStore(hoverSource.subscribe,hoverSource.getSnapshot);
           const tip=useRef(null);
@@ -1040,7 +960,6 @@ window.__ModuleLoader__.load({
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-colors',order:23}, ColorOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));
-        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-file-menu',order:22}, FileOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-primary-tooltip',order:19}, PrimaryDirectoryTooltip));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-experience',order:21}, ExperienceOverlay));
       }

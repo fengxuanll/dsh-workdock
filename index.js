@@ -519,8 +519,8 @@ function validateVolatileSchema(schema, path = [], blocked = false, seen = /* @_
   if (schema.inner && (schema.type !== "lazy" || schema.inner[kSchema])) validateVolatileSchema(schema.inner, [...path, "*"], true, seen);
   if (schema.list) for (let index = 0; index < schema.list.length; index++) validateVolatileSchema(schema.list[index], [...path, String(index)], true, seen);
 }
-Schema.extend = function extend(type, resolve3) {
-  resolvers[type] = resolve3;
+Schema.extend = function extend(type, resolve2) {
+  resolvers[type] = resolve2;
 };
 Schema.resolve = function resolve(data, schema, options = {}, strict = false) {
   if (!schema) return [data];
@@ -2054,8 +2054,8 @@ var Fiber = class {
     let inFlight;
     let removeWrapper = () => false;
     const waitForSetup = () => {
-      setupBarrier ??= new Promise((resolve3, reject) => {
-        resolveSetup = resolve3;
+      setupBarrier ??= new Promise((resolve2, reject) => {
+        resolveSetup = resolve2;
         rejectSetup = reject;
       });
       return setupBarrier;
@@ -2315,16 +2315,16 @@ function Inject(name, config2) {
   };
 }
 (function(Inject2) {
-  function resolve3(inject2, result = /* @__PURE__ */ Object.create(null)) {
+  function resolve2(inject2, result = /* @__PURE__ */ Object.create(null)) {
     if (!inject2) return result;
     if (Array.isArray(inject2)) for (const name of inject2) result[name] = null;
     else if (Reflect.has(inject2, symbols.checkProto)) {
-      Object.assign(result, resolve3(Object.getPrototypeOf(inject2)));
+      Object.assign(result, resolve2(Object.getPrototypeOf(inject2)));
       for (const name of Object.keys(inject2)) result[name] = inject2[name] ?? null;
     } else for (const name of Object.keys(inject2)) result[name] = inject2[name] ?? null;
     return result;
   }
-  Inject2.resolve = resolve3;
+  Inject2.resolve = resolve2;
 })(Inject || (Inject = {}));
 var RegistryService = class {
   ctx;
@@ -6055,8 +6055,8 @@ function createRunCodeTool(registry2, options, ctx) {
           driverRun = (async () => {
             try {
               for (; ; ) {
-                const signal = new Promise((resolve3) => {
-                  wake = resolve3;
+                const signal = new Promise((resolve2) => {
+                  wake = resolve2;
                 });
                 const commitHead = commitQueue[0];
                 if (commitHead !== void 0 && commitHead.settled) {
@@ -6119,10 +6119,10 @@ function createRunCodeTool(registry2, options, ctx) {
             signal: runController.signal
           };
           const scheduler = registry2[TOOL_RUNTIME_SCHEDULER];
-          const outcome = await new Promise((resolve3, reject) => {
+          const outcome = await new Promise((resolve2, reject) => {
             let parked;
             const settle = (result) => {
-              resolve3(result.isError ? {
+              resolve2(result.isError ? {
                 isError: true,
                 message: result.error.message
               } : {
@@ -22653,130 +22653,19 @@ Use the primary directory as the working directory for subsequent commands and r
 
 // folder-opener.js
 import { spawn } from "node:child_process";
-import { realpath as realpath2, stat as stat2 } from "node:fs/promises";
-import { dirname, extname, isAbsolute as isAbsolute2, resolve as resolve2 } from "node:path";
 function openDirectory(path, platform = process.platform, launch = spawn) {
   const command = platform === "win32" ? "explorer.exe" : platform === "darwin" ? "open" : "xdg-open";
   return launchFileManager(command, [path], launch);
 }
 function launchFileManager(command, args, launch) {
-  return new Promise((resolve3, reject) => {
+  return new Promise((resolve2, reject) => {
     const child = launch(command, args, { shell: false, detached: true, stdio: "ignore", windowsHide: false });
     child.once("error", reject);
     child.once("spawn", () => {
       child.unref();
-      resolve3();
+      resolve2();
     });
   });
-}
-function validatePath(path) {
-  if (typeof path !== "string" || !path.trim() || path.length > 32768 || /[\x00-\x1f\x7f-\x9f]/.test(path)) {
-    throw new Error("\u672C\u5730\u6587\u4EF6\u8DEF\u5F84\u65E0\u6548");
-  }
-  if (/^[a-z][a-z\d+.-]*:/i.test(path) && !/^[a-z]:[\\/]/i.test(path)) {
-    throw new Error("\u53EA\u652F\u6301\u672C\u5730\u6587\u4EF6\u8DEF\u5F84\uFF0C\u4E0D\u652F\u6301 URL \u6216\u76D8\u7B26\u76F8\u5BF9\u8DEF\u5F84");
-  }
-  if (/^[\\/]{2}[?.][\\/]/.test(path)) throw new Error("\u4E0D\u652F\u6301\u8BBE\u5907\u8DEF\u5F84");
-  if (process.platform === "win32" && /^[\\/](?![\\/])/.test(path)) throw new Error("\u8DEF\u5F84\u5FC5\u987B\u5305\u542B\u5B8C\u6574\u76D8\u7B26\uFF0C\u4E0D\u80FD\u4F9D\u8D56\u4E3B\u673A\u5F53\u524D\u76D8\u7B26");
-}
-async function resolveLocalPath(input, agent) {
-  validatePath(input);
-  if (process.platform === "win32") input = input.replace(/:\d+(?::\d+)?$/, "");
-  let base;
-  if (!isAbsolute2(input)) {
-    if (!agent?.session) throw new Error("\u76F8\u5BF9\u8DEF\u5F84\u9700\u8981\u6D3B\u52A8\u804A\u5929\u4F1A\u8BDD");
-    base = await agent.ctx?.get("workingDirectory")?.get(agent.session);
-    if (typeof base !== "string" || !isAbsolute2(base)) base = agent.session.header?.cwd;
-    if (typeof base !== "string" || !isAbsolute2(base)) throw new Error("\u5F53\u524D\u804A\u5929\u6CA1\u6709\u6709\u6548\u7684\u5DE5\u4F5C\u76EE\u5F55");
-    validatePath(base);
-  }
-  const canonical = async (candidate) => {
-    if (process.platform === "win32" && candidate.replace(/^[a-z]:/i, "").includes(":")) throw new Error("\u4E0D\u652F\u6301\u6587\u4EF6\u6D41\u8DEF\u5F84");
-    const path = await realpath2(isAbsolute2(candidate) ? candidate : resolve2(base, candidate));
-    validatePath(path);
-    const info = await stat2(path);
-    if (!info.isFile() && !info.isDirectory()) throw new Error("\u8DEF\u5F84\u4E0D\u662F\u666E\u901A\u6587\u4EF6\u6216\u76EE\u5F55");
-    return { path, isDirectory: info.isDirectory() };
-  };
-  try {
-    return await canonical(input);
-  } catch (error51) {
-    if (!["ENOENT", "ENOTDIR"].includes(error51.code)) throw error51;
-    const stripped = input.replace(/#L\d+(?:-L?\d+)?$/i, "").replace(/:\d+(?::\d+)?$/, "");
-    if (stripped === input || !stripped) throw error51;
-    return canonical(stripped);
-  }
-}
-var unsafeWindowsExtensions = /* @__PURE__ */ new Set([
-  ".exe",
-  ".cmd",
-  ".bat",
-  ".ps1",
-  ".psm1",
-  ".psd1",
-  ".com",
-  ".lnk",
-  ".url",
-  ".msi",
-  ".msp",
-  ".msix",
-  ".appx",
-  ".appxbundle",
-  ".msixbundle",
-  ".application",
-  ".vbs",
-  ".vbe",
-  ".js",
-  ".jse",
-  ".wsf",
-  ".wsh",
-  ".hta",
-  ".scr",
-  ".cpl",
-  ".reg",
-  ".jar",
-  ".py",
-  ".pyw",
-  ".sh",
-  ".pif",
-  ".scf",
-  ".gadget",
-  ".inf",
-  ".sct",
-  ".mjs",
-  ".cjs",
-  ".ts",
-  ".pl",
-  ".rb",
-  ".php",
-  ".lua",
-  ".ahk",
-  ".au3",
-  ".chm",
-  ".msh",
-  ".msh1",
-  ".msh2",
-  ".mshxml",
-  ".msh1xml",
-  ".msh2xml",
-  ".psc1",
-  ".psc2"
-]);
-async function openLocalPath(action, input, agent, { platform = process.platform, launch = spawn } = {}) {
-  if (!["open_file", "reveal_file"].includes(action)) throw new Error("\u672A\u77E5\u6587\u4EF6\u64CD\u4F5C");
-  const target = await resolveLocalPath(input, agent);
-  if (action === "open_file" && !target.isDirectory && platform === "win32" && unsafeWindowsExtensions.has(extname(target.path.replace(/[ .]+$/, "")).toLowerCase())) {
-    throw new Error("\u4E3A\u907F\u514D\u6267\u884C\u4EE3\u7801\uFF0C\u4E0D\u652F\u6301\u76F4\u63A5\u6253\u5F00\u53EF\u6267\u884C\u6587\u4EF6\u6216\u811A\u672C\uFF1B\u8BF7\u6253\u5F00\u6240\u5728\u6587\u4EF6\u5939");
-  }
-  const path = action === "reveal_file" && !target.isDirectory ? dirname(target.path) : target.path;
-  if (action === "reveal_file" && !target.isDirectory && platform === "win32") {
-    await launchFileManager("explorer.exe", ["/select,", target.path], launch);
-  } else if (action === "reveal_file" && !target.isDirectory && platform === "darwin") {
-    await launchFileManager("open", ["-R", target.path], launch);
-  } else {
-    await openDirectory(path, platform, launch);
-  }
-  return { path: target.path, openedPath: path };
 }
 
 // src/index.js
@@ -22840,7 +22729,6 @@ async function apply(ctx) {
     }))).filter(Boolean);
   }
   async function perform(args, agent, signal) {
-    if (args.action === "open_file" || args.action === "reveal_file") return openLocalPath(args.action, args.path, agent);
     if (args.action === "check_directories") return { directoryWarnings: await checkDirectories(args.folders ?? []) };
     if (args.action === "open_folder") {
       const workspace = args.workspaceId ? ctx.workspaceRegistry.list().find((item) => item.id === args.workspaceId) : null;
@@ -22862,10 +22750,9 @@ async function apply(ctx) {
   const apiSchema = external_exports.object({
     sessionId: external_exports.string().min(1).max(500).optional(),
     args: external_exports.object({
-      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "open_file", "reveal_file", "check_directories", "touch", "set_color"]),
+      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "check_directories", "touch", "set_color"]),
       target: external_exports.enum(["project", "workspace", "session"]).optional(),
       color: labelColor.nullable().optional(),
-      path: external_exports.string().min(1).max(32768).optional(),
       id: external_exports.string().max(500).optional(),
       title: external_exports.string().max(500).optional(),
       folders: external_exports.array(external_exports.string().max(32768)).max(128).optional(),
