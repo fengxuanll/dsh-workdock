@@ -5,8 +5,12 @@ const root=new URL('../',import.meta.url);
 const [react,reactDOM,client]=await Promise.all(['node_modules/react/umd/react.development.js','node_modules/react-dom/umd/react-dom.development.js','client.js'].map(path=>readFile(new URL(path,root),'utf8')));
 const inline=text=>text.replace(/<\/script/gi,'<\\/script');
 const fixture=String.raw`
-const h=React.createElement,entries=new Map(),disposers=[],requests=[],createdSessions=[],openedSessions=[],navigation=[];
+const h=React.createElement,entries=new Map(),disposers=[],requests=[],createdSessions=[],openedSessions=[],navigation=[],shortcutSessions=[];
+ localStorage.removeItem('dsh-workdock-pinned-workspaces');
 let failSession=false;
+ localStorage.removeItem('dsh-workdock-workspace-unpinned-order');
+ const workspaceListeners=new Set(),reorderCalls=[];
+ let workspaceSnapshot={phase:'ready',items:[{workspaceId:'w0',title:'普通项目',path:'E:/Workspace/Other',sessionIds:[]},{workspaceId:'w1',title:'运营业绩看板 01',path:'E:/Workspace/Projects/project-01',sessionIds:['s1']}]};
 let dictionary,selectPanel;
 const snapshot={byId:{s1:{id:'s1',retainedBy:{mainView:1}}}};
 let projects=Array.from({length:67},(_,i)=>({id:'p'+i,title:['运营业绩看板','报文解析工具','仓储库存服务','订单同步','项目管理插件'][i%5]+' '+String(i+1).padStart(2,'0'),primary:'E:/Workspace/Projects/project-'+String(i+1).padStart(2,'0'),folders:['E:/Workspace/Projects/project-'+String(i+1).padStart(2,'0'),'D:/Reference/shared-'+i],sessionRoots:[],pinned:i===0,lastUsedAt:100-i,revision:1}));
@@ -16,8 +20,8 @@ const ctx={
  slots:{inject(name,fn){fn();},register(options,component){entries.set(options.id||options.key,{options,component});return()=>{};}},
  layout:{selectPanel(id){navigation.push('panel:'+id);selectPanel(id);}},
  sessions:{list:{getSnapshot:()=>snapshot,subscribe:()=>()=>{}},create:async args=>{createdSessions.push(args);await new Promise(resolve=>setTimeout(resolve,40));if(failSession)throw Error('Session creation failed');return 'new-'+createdSessions.length;}},
- workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'w1',title:'运营业绩看板 01',path:'E:/Workspace/Projects/project-01',sessionIds:['s1']}]})},create:async()=>({workspaceId:'w1'}),delete:async()=>{}},
- uiWorkspace:{openSession(id){if(id.startsWith('new-')){if(navigation.at(-1)!=='panel:null')throw Error('session opened before leaving project page');navigation.push('open:'+id);openedSessions.push(id);}},startSession(){throw Error('fire-and-forget session creation must not be used');}},
+ workspaces:{list:{getSnapshot:()=>workspaceSnapshot,subscribe(fn){workspaceListeners.add(fn);return()=>workspaceListeners.delete(fn);}},insertBefore:async(id,before)=>{reorderCalls.push([id,before]);const items=workspaceSnapshot.items.filter(w=>w.workspaceId!==id),row=workspaceSnapshot.items.find(w=>w.workspaceId===id),index=items.findIndex(w=>w.workspaceId===before);items.splice(index<0?items.length:index,0,row);workspaceSnapshot={...workspaceSnapshot,items};for(const fn of workspaceListeners)fn();},create:async()=>({workspaceId:'w1'}),delete:async()=>{}},
+ uiWorkspace:{openSession(id){shortcutSessions.push(id);if(id.startsWith('new-')){if(navigation.at(-1)!=='panel:null')throw Error('session opened before leaving project page');navigation.push('open:'+id);openedSessions.push(id);}},startSession(){throw Error('fire-and-forget session creation must not be used');}},
  remote:{directoryPicker:{pick:async()=>({ok:true,value:'E:/Workspace/Projects/new-source'})}}
 };
 window.fetch=async(url,options)=>{
@@ -36,11 +40,12 @@ const checks=String.raw`
 const root=ReactDOM.createRoot(document.getElementById('root'));
 function BrowserHost(){
  const [panel,setPanel]=React.useState(null);selectPanel=setPanel;
+ const nativeWorkspaces=React.useSyncExternalStore(ctx.workspaces.list.subscribe,ctx.workspaces.list.getSnapshot);
  const nav=entries.get('dsh-workdock-projects');
  const Page=entries.get('dsh-workdock-projects').component,Dock=entries.get('dsh-workdock-dock').component;
  // Main and nav use the same id; the slots adapter below stores separate keys.
  const Experience=entries.get('dsh-workdock-experience').component,Tree=entries.get('dsh-workdock-tree-menu').component;
- return h('div',{className:'fixture-shell'},h('aside',null,h('div',{className:'fixture-brand'},'Harness'),h('div',{className:'GAkraW_root'},h('div',{className:'GAkraW_sectionHeader'},h('span',null,'工作区'),h('div',{className:'GAkraW_searchSlot'},h('button',{title:'搜索'},'⌕')),h('div',{className:'GAkraW_headerActions'},h('button',{title:'视图'},'☷'),h('button',{title:'添加工作区','aria-label':'添加工作区'},'+'))),h('div',{className:'fixture-path','data-row-key':'workspace:w1',tabIndex:0},'dsh-workdock',h('button',{id:'fixture-project-menu','aria-label':'项目操作'},'…')))),
+ return h('div',{className:'fixture-shell'},h('aside',null,h('div',{className:'fixture-brand'},'Harness'),h('div',{className:'GAkraW_root'},h('div',{className:'GAkraW_sectionHeader'},h('span',null,'工作区'),h('div',{className:'GAkraW_searchSlot'},h('button',{title:'搜索'},'⌕')),h('div',{className:'GAkraW_headerActions'},h('button',{title:'视图'},'☷'),h('button',{title:'添加工作区','aria-label':'添加工作区'},'+'))),h('div',{id:'fixture-native-tree'},nativeWorkspaces.items.map(w=>h('div',{key:w.workspaceId,className:'fixture-path','data-row-key':'workspace:'+w.workspaceId,tabIndex:0},w.title,h('button',{id:w.workspaceId==='w1'?'fixture-project-menu':'fixture-project-menu-'+w.workspaceId,'aria-label':'项目操作'},'…'),...w.sessionIds.map(id=>h('div',{key:id,'data-row-key':'session:'+id},'　会话 '+id))))))),
  h('main',null,panel?h(Page):h('div',{className:'fixture-conversation'},h('h1',null,'聊天'),h(Dock,{dock:true,sessionId:'s1'}))),h(Experience),h(Tree));
 }
 root.render(h(BrowserHost));
@@ -117,6 +122,17 @@ const input=async(node,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement
  document.querySelector('[data-row-key="workspace:w1"]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:100,clientY:130}));await wait();
  await click(dictionary.newChat,document.querySelector('[role=menu]'));
  verify('project menu creates another fresh session instead of reusing current',openedSessions.at(-1)==='new-3'&&createdSessions.length===3&&!document.querySelector('[role=menu]'));
+ const nativeRow=document.querySelector('[data-row-key="workspace:w1"]'),nativeSession=nativeRow.querySelector('[data-row-key="session:s1"]'),createCount=createdSessions.length;
+ document.getElementById('fixture-project-menu').click();await wait();
+ await click(dictionary.pin,document.querySelector('[role=menu]'));
+ verify('pin reorders original host model and tree without extra region',reorderCalls.length>0&&workspaceSnapshot.items[0].workspaceId==='w1'&&document.getElementById('fixture-native-tree').firstElementChild===nativeRow&&!document.querySelector('.dpm-tree-pins')&&document.querySelectorAll('[data-row-key="workspace:w1"]').length===1);
+ verify('pin keeps original workspace and session DOM identity without new chats',nativeRow.querySelector('[data-row-key="session:s1"]')===nativeSession&&createdSessions.length===createCount&&JSON.parse(localStorage.getItem('dsh-workdock-pinned-workspaces'))[0]==='w1');
+ const pr=nativeRow.getBoundingClientRect(),sr=nativeSession.getBoundingClientRect();verify('project and nested session stay within native row geometry',pr.width>0&&sr.top>=pr.top&&sr.bottom<=pr.bottom);
+ nativeRow.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:100,clientY:130}));await wait();
+ verify('original project menu offers unpin',!![...document.querySelectorAll('[role=menuitem]')].find(b=>b.textContent===dictionary.unpin));
+ await click(dictionary.unpin,document.querySelector('[role=menu]'));
+ verify('unpin restores original native position and keeps session',workspaceSnapshot.items.map(w=>w.workspaceId).join(',')==='w0,w1'&&document.getElementById('fixture-native-tree').lastElementChild===nativeRow&&nativeRow.contains(nativeSession)&&localStorage.getItem('dsh-workdock-pinned-workspaces')==='[]');
+ document.getElementById('fixture-project-menu').click();await wait();await click(dictionary.pin,document.querySelector('[role=menu]'));
  manage.click();await wait();
  document.documentElement.dataset.selfCheck='passed';
  }catch(error){results.push({name:error.message,pass:false});document.documentElement.dataset.selfCheck='failed';}

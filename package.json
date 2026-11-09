@@ -1,6 +1,6 @@
 {
   "name": "dsh-workdock",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "多目录项目管理与主要工作目录绑定",
   "type": "module",
   "license": "MIT",

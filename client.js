@@ -89,8 +89,8 @@ window.__ModuleLoader__.load({
     const css = baseCss + folderCss + compactCss + pageCss + colorCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
-    Object.assign(zh,{more:'置顶 / 更多…',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
-    Object.assign(en,{more:'Pin / more…',nativeUnavailable:'The host project menu is unavailable. Use the project row menu button.',removeTreeConfirm:'Remove this project and its directory settings from the sidebar? Files and chat history will be kept.'});
+    Object.assign(zh,{more:'更多…',treeOrderUnavailable:'当前宿主不支持项目排序，请升级 Harness。',treeProjectUnavailable:'项目已不存在，请刷新后重试。',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
+    Object.assign(en,{more:'More…',treeOrderUnavailable:'This host does not support workspace ordering. Update Harness.',treeProjectUnavailable:'This project no longer exists. Refresh and try again.',nativeUnavailable:'The host project menu is unavailable. Use the project row menu button.',removeTreeConfirm:'Remove this project and its directory settings from the sidebar? Files and chat history will be kept.'});
     Object.assign(zh,{manage:'项目管理',openFolder:'在资源管理器中打开',rename:'重命名',deleteWorkspace:'删除工作区'});
     Object.assign(en,{manage:'Project management',openFolder:'Open folder in file manager',rename:'Rename',deleteWorkspace:'Delete workspace'});
     Object.assign(zh,{setPrimaryButton:'设为主要目录',saveNote:'保存后，当前聊天及后续操作将使用主要目录。'});
@@ -176,6 +176,51 @@ window.__ModuleLoader__.load({
           beforeOpen();
           ctx.layout.selectPanel(null);
           ctx.uiWorkspace.openSession(sessionId);
+        }
+        // Reorder the host model, not its virtualized DOM: this moves each native
+        // workspace together with its sessions, expansion and keyboard state.
+        const TREE_PINS_KEY='dsh-workdock-pinned-workspaces',TREE_ORDER_KEY='dsh-workdock-workspace-unpinned-order';
+        function readWorkspaceIds(key){try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?[...new Set(value.filter(id=>typeof id==='string'&&id.length>0&&id.length<=500))]:[];}catch{return [];}}
+        let treePins=readWorkspaceIds(TREE_PINS_KEY),treeOrderBusy=false,treeOrderDisposed=false,reconcileTreePins=()=>{};
+        const treePinListeners=new Set();
+        const treePinSource={subscribe(fn){treePinListeners.add(fn);return()=>treePinListeners.delete(fn);},getSnapshot:()=>treePins};
+        const workspaceIds=()=>ctx.workspaces.list.getSnapshot().items.map(w=>w.workspaceId);
+        function pinnedOrder(ids,pins){const valid=pins.filter(id=>ids.includes(id));return [...valid,...ids.filter(id=>!valid.includes(id))];}
+        async function applyWorkspaceOrder(order){
+          if(typeof ctx.workspaces.insertBefore!=='function')throw new Error(t('treeOrderUnavailable'));
+          for(let i=0;i<order.length;i++){
+            if(treeOrderDisposed)return;
+            const current=workspaceIds();
+            if(!current.includes(order[i])||current[i]===order[i])continue;
+            await ctx.workspaces.insertBefore(order[i],current[i]);
+          }
+        }
+        async function setTreePin(id,pinned){
+          if(treeOrderBusy||treeOrderDisposed)return;
+          if(typeof ctx.workspaces.insertBefore!=='function')throw new Error(t('treeOrderUnavailable'));
+          const original=workspaceIds();if(!original.includes(id))throw new Error(t('treeProjectUnavailable'));
+          const next=pinned?[id,...treePins.filter(value=>value!==id)]:treePins.filter(value=>value!==id);
+          const previousPins=localStorage.getItem(TREE_PINS_KEY),previousOrder=localStorage.getItem(TREE_ORDER_KEY);
+          const baseline=treePins.length?readWorkspaceIds(TREE_ORDER_KEY):original;
+          const desired=pinnedOrder(original,next);
+          if(!pinned){
+            desired.splice(desired.indexOf(id),1);
+            const anchor=baseline.slice(baseline.indexOf(id)+1).find(value=>desired.includes(value)&&!next.includes(value));
+            desired.splice(anchor?desired.indexOf(anchor):desired.length,0,id);
+          }
+          treeOrderBusy=true;
+          try{
+            // Validate storage before any remote write; publish the new state only
+            // after the authoritative native reorder has succeeded.
+            localStorage.setItem(TREE_ORDER_KEY,JSON.stringify(baseline));
+            localStorage.setItem(TREE_PINS_KEY,JSON.stringify(next));
+            await applyWorkspaceOrder(desired);
+            if(!treeOrderDisposed){treePins=next;for(const fn of treePinListeners)fn();}
+          }catch(error){
+            try{if(previousOrder===null)localStorage.removeItem(TREE_ORDER_KEY);else localStorage.setItem(TREE_ORDER_KEY,previousOrder);if(previousPins===null)localStorage.removeItem(TREE_PINS_KEY);else localStorage.setItem(TREE_PINS_KEY,previousPins);}catch{/* Preserve the original failure when storage itself is unavailable. */}
+            try{if(original.join('\0')!==workspaceIds().join('\0'))await applyWorkspaceOrder(original);}catch{/* Host reports rollback failure through its own state; never publish a successful pin. */}
+            throw error;
+          }finally{treeOrderBusy=false;reconcileTreePins();}
         }
         let allowNativeMenu = false;
         ctx.effect(() => {
@@ -269,7 +314,7 @@ window.__ModuleLoader__.load({
             event.preventDefault(); event.stopPropagation();
             const rect = (ellipsis ? row.querySelector('button') : row).getBoundingClientRect();
             publishTree({ workspace, sequence: ++requestSequence, trigger: row, ellipsis,
-              nativeMenu: row.querySelector('button'),
+              nativeMenu: row.querySelector('button:not(.dpm-sidebar-color)'),
               x: ellipsis ? rect.left : event.clientX || rect.left + 20,
               y: ellipsis ? rect.bottom : event.clientY || rect.bottom });
           }
@@ -684,6 +729,7 @@ window.__ModuleLoader__.load({
         }
         function TreeOverlay() {
           const request = useSyncExternalStore(treeSource.subscribe, treeSource.getSnapshot);
+          const pins=useSyncExternalStore(treePinSource.subscribe,treePinSource.getSnapshot);
           const [editor, setEditor] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
           const [position, setPosition] = useState({left:8,top:8});
           const menu = useRef(null);
@@ -710,10 +756,14 @@ window.__ModuleLoader__.load({
             return ctx.sessions.create({workspaceId:workspace.workspaceId});
           }
           async function run(kind) {
-            if (!request || busy) return;
+            if (!request || busy || (kind==='pin'&&treeOrderBusy)) return;
             const target = request; setBusy(true); setError('');
             try {
               const workspace = target.workspace;
+              if(kind==='pin'){
+                await setTreePin(workspace.workspaceId,!treePins.includes(workspace.workspaceId));
+                closeMenu();return;
+              }
               if (kind === 'more') {
                 if (!target.nativeMenu?.isConnected) throw new Error(t('nativeUnavailable'));
                 closeMenu();
@@ -760,7 +810,7 @@ window.__ModuleLoader__.load({
           const item = (key,label=key) => h('button',{key,type:'button',role:'menuitem',disabled:busy,onClick:()=>run(key),className:key==='remove'?'dpm-danger':undefined},t(label));
           return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('title'),style:position,onKeyDown:keyboard},
             h('div',{className:'dpm-menu-title'},request.workspace.title),
-            item('edit'),item('openFolder'),item('copy'),item('newChat'),
+            item('edit'),item('pin',pins.includes(request.workspace.workspaceId)?'unpin':'pin'),item('openFolder'),item('copy'),item('newChat'),
             h('button',{type:'button',role:'menuitem',disabled:busy,onClick:()=>{const target=workspaceColorTarget(request.workspace);openColor(target,request.nativeMenu||request.trigger,position);closeMenu();}},t('colorLabel')),
             h('div',{className:'dpm-menu-separator',role:'separator'}),item('more'),item('remove'),error&&h('div',{className:'dpm-error',role:'alert'},error)));
         }
@@ -778,6 +828,32 @@ window.__ModuleLoader__.load({
               notice&&h('button',{className:'dpm-mini','aria-label':t('close'),onClick:dismissNotice},'×')));
         }
         ctx.slots.inject('main',()=>ctx.slots.register({name:'main',key:PAGE_ID,id:PAGE_ID,locale:'dsh-workdock'},ProjectPage));
+        // Keep saved pins leading when the native snapshot reloads or new
+        // workspaces arrive; unpinned workspaces retain their current order.
+        ctx.effect(()=>{
+          let scheduled=false,failedSignature=null;
+          function sync(){
+            if(scheduled||treeOrderBusy||treeOrderDisposed||!treePins.length||typeof ctx.workspaces.insertBefore!=='function')return;
+            const snapshot=ctx.workspaces.list.getSnapshot();
+            if(snapshot.phase&&snapshot.phase!=='ready')return;
+            scheduled=true;
+            queueMicrotask(async()=>{
+              scheduled=false;if(treeOrderBusy||treeOrderDisposed)return;
+              const ids=workspaceIds(),desired=pinnedOrder(ids,treePins);
+              const signature=JSON.stringify([ids,treePins]);
+              if(ids.join('\0')===desired.join('\0')||signature===failedSignature)return;
+              treeOrderBusy=true;
+              try{await applyWorkspaceOrder(desired);failedSignature=null;}
+              catch(error){failedSignature=JSON.stringify([workspaceIds(),treePins]);if(!treeOrderDisposed)announce(error.message,true);}
+              finally{treeOrderBusy=false;sync();}
+            });
+          }
+          const storage=event=>{if(event.key===TREE_PINS_KEY||event.key===null){treePins=readWorkspaceIds(TREE_PINS_KEY);for(const fn of treePinListeners)fn();}};
+          const unsubPins=treePinSource.subscribe(sync),unsubWorkspaces=ctx.workspaces.list.subscribe?.(sync)||(()=>{});
+          reconcileTreePins=sync;
+          window.addEventListener('storage',storage);sync();
+          return()=>{treeOrderDisposed=true;reconcileTreePins=()=>{};unsubPins();unsubWorkspaces();window.removeEventListener('storage',storage);};
+        });
         // WorkspaceBrowser exposes no header-action slot. Mount only in its
         // verified CSS-module structure, never by translated text or button order.
         ctx.effect(()=>{
