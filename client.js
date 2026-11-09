@@ -89,7 +89,7 @@ window.__ModuleLoader__.load({
     const turnCss = `
 .dpm-turn-hidden{display:block!important}.dpm-turn-hidden:not(.dpm-turn-placeholder){height:0!important;min-height:0!important;margin-block:0!important;padding-block:0!important;border-block-width:0!important;overflow:hidden!important}.dpm-turn-hidden > :not(.dpm-turn-restore){display:none!important}
 .dpm-turn-placeholder{margin-block:0!important;padding-block:0!important}.dpm-turn-restore{display:flex;align-items:center;gap:8px;min-height:22px;padding:0;margin:0;color:var(--dsw-alias-label-secondary,#aaa);font-size:12px;line-height:22px}.dpm-turn-restore button,.dpm-turn-action{font:inherit;color:var(--dsw-alias-label-secondary,#aaa);background:transparent;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px}.dpm-turn-restore button:hover,.dpm-turn-action:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-turn-restore button:focus-visible,.dpm-turn-action:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}
-.dpm-turn-restore button{padding:0 4px;line-height:22px}.dpm-turn-action-seat{display:inline-flex;align-items:center;flex:none}.dpm-turn-hide-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:4px;flex:none}.dpm-turn-hide-button:disabled{opacity:.4;cursor:default}
+.dpm-turn-restore button{padding:0 4px;line-height:22px}.dpm-turn-action-seat{display:inline-flex;align-items:center;flex:none}.dpm-turn-hide-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:4px;flex:none}.dpm-turn-hide-button:disabled{opacity:.4;cursor:default}.dpm-turn-restore-all{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;padding:4px;flex:none;vertical-align:middle}
 `;
     const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
@@ -204,7 +204,8 @@ window.__ModuleLoader__.load({
         function RestoreHiddenTurns({sessionId}){
           useSyncExternalStore(hiddenSource.subscribe,hiddenSource.getSnapshot);
           const count=sessionId?turnsFor(sessionId).size:0;
-          return count?h('button',{type:'button',className:'dpm-turn-action',title:t('hideTurnNote'),onClick:()=>changeHiddenTurns(sessionId,null,false)},`${t('restoreTurns')} (${count})`):null;
+          const label=`${t('restoreTurns')} (${count})`;
+          return count?h('button',{type:'button',className:'dpm-turn-action dpm-turn-restore-all',title:label,'aria-label':label,onClick:()=>changeHiddenTurns(sessionId,null,false)},h('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.6,strokeLinecap:'round',strokeLinejoin:'round','aria-hidden':true},h('path',{d:'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z'}),h('circle',{cx:12,cy:12,r:3}))):null;
         }
         ctx.effect(()=>{
           const marked=new Set(),restores=new Map(),hiddenChildren=new Map();
@@ -1035,7 +1036,7 @@ window.__ModuleLoader__.load({
           return()=>{observer.disconnect();for(const [host,button] of mounted){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();}mounted.clear();for(const button of addButtons.values()){button.removeEventListener('click',openAddProject);button.remove();}addButtons.clear();style.remove();};
         });
         ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({name:'conversation.chat.turnTail',id:'dsh-workdock-hide-turn',order:90}, HideTurn));
-        ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({name:'conversation.input.dock',id:'dsh-workdock-restore-turns',order:90,inject:sessionId=>({sessionId})}, RestoreHiddenTurns));
+        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-restore-turns',order:11,inject:sessionId=>({sessionId})}, RestoreHiddenTurns));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-colors',order:23}, ColorOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));

@@ -6,3 +6,4 @@ node_modules/
 dist/
 .npm-cache/
 .build-tools/
+.acl-recovery/acl-report-c44aa0840f624addbec29113fb7f3a78.jsonl

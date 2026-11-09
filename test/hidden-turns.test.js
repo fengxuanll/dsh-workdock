@@ -47,7 +47,12 @@ test('hide a whole turn, keep original DOM and other turns/sessions, restore ind
  const app=await harness();
  try{
   assert.equal(app.entries.get('dsh-workdock-hide-turn').options.name,'conversation.chat.turnTail');
-  assert.equal(app.entries.get('dsh-workdock-restore-turns').options.name,'conversation.input.dock');
+  const restoreEntry=app.entries.get('dsh-workdock-restore-turns').options;
+   const projectEntry=app.entries.get('dsh-workdock-dock').options;
+   assert.equal(restoreEntry.name,'conversation.composer.dock');
+   assert.equal(restoreEntry.name,projectEntry.name,'restore shares the bottom status slot with the project');
+   assert.equal(restoreEntry.order,projectEntry.order+1,'restore is immediately after the project entry');
+   assert.equal([...app.entries.values()].some(entry=>entry.options.name==='conversation.input.dock'),false,'no restore entry above the input');
   assert.equal(document.querySelector('#tail1 [data-dpm-hide-turn]').getAttribute('data-dpm-hide-turn'),'1','scoped Turn owner must normalize to its numeric id');
   assert.equal(document.querySelector('#tail1 [data-dpm-hide-turn]').disabled,false);
   await app.flush(()=>{const child=document.createElement('div');child.id='native-hidden';child.hidden=true;document.querySelector('#reply1').append(child);});
@@ -64,7 +69,13 @@ test('hide a whole turn, keep original DOM and other turns/sessions, restore ind
   assert.notEqual(domStyle(app,'#user1'),'none');
   for(const id of ['user2','other'])assert.equal(document.getElementById(id).classList.contains('dpm-turn-hidden'),false);
   assert.deepEqual(JSON.parse(app.dom.window.localStorage.getItem(key('s1'))),['1']);
-  assert.match(document.querySelector('#dock').textContent,/恢复全部隐藏轮次 \(1\)/);
+  const restoreAll=document.querySelector('#dock button');
+   assert.equal(restoreAll.textContent,'','restore all is icon-only, without a standalone label');
+   assert.equal(restoreAll.title,'恢复全部隐藏轮次 (1)');
+   assert.equal(restoreAll.getAttribute('aria-label'),restoreAll.title);
+   assert.ok(restoreAll.querySelector('svg[aria-hidden="true"]'));
+   assert.equal(app.dom.window.getComputedStyle(restoreAll).width,'24px');
+   assert.equal(app.dom.window.getComputedStyle(restoreAll).height,'24px');
   await app.click('.dpm-turn-restore button');assert.equal(document.querySelectorAll('.dpm-turn-hidden').length,0);assert.equal(document.querySelector('#dock').textContent,'');
   assert.equal(document.activeElement,document.querySelector('#tail1 [data-dpm-hide-turn]'));
   assert.equal(document.querySelector('#reply1 > [data-slot]').hasAttribute('hidden'),false);
@@ -72,6 +83,7 @@ test('hide a whole turn, keep original DOM and other turns/sessions, restore ind
   await app.click('#tail1 [data-dpm-hide-turn]');await app.click('#tail2 [data-dpm-hide-turn]');
   await app.click('#tail-other [data-dpm-hide-turn]');
   assert.equal(document.querySelectorAll('.dpm-turn-restore').length,3);
+  assert.equal(document.querySelector('#dock button').title,'恢复全部隐藏轮次 (2)','tooltip counts only the current session');
   await app.click('#dock button');assert.equal(document.querySelector('#user1').classList.contains('dpm-turn-hidden'),false);
   assert.equal(document.querySelector('#user2').classList.contains('dpm-turn-hidden'),false);
   assert.equal(document.querySelector('#other').classList.contains('dpm-turn-hidden'),true);
