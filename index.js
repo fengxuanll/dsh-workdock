@@ -22552,6 +22552,8 @@ config(en_default());
 import { realpath, stat } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
+var LABEL_COLORS = ["red", "orange", "yellow", "green", "blue", "purple"];
+var HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 async function canonicalDirectory(value) {
   if (typeof value !== "string" || !isAbsolute(value) || process.platform === "win32" && !/^(?:[a-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+)/i.test(value)) {
     throw new Error("\u8BF7\u8F93\u5165\u5B8C\u6574\u7684\u7EDD\u5BF9\u76EE\u5F55\u8DEF\u5F84");
@@ -22592,6 +22594,17 @@ var ProjectManager = class {
         return project3;
       };
       if (args.action === "list") return { ...state, activeProjectId: this.projectFor(session)?.id ?? null };
+      if (args.action === "set_color") {
+        if (!["project", "workspace", "session"].includes(args.target) || typeof args.id !== "string" || !args.id.trim() || args.id.length > 500) throw new Error("\u989C\u8272\u6807\u8BB0\u76EE\u6807\u65E0\u6548");
+        if (args.color !== null && !LABEL_COLORS.includes(args.color) && !(typeof args.color === "string" && args.color.length === 7 && HEX_COLOR.test(args.color))) throw new Error("\u989C\u8272\u6807\u8BB0\u65E0\u6548");
+        if (args.target === "project") get();
+        const key = `${args.target}:${args.id}`;
+        state.colors = { ...state.colors };
+        if (args.color === null) delete state.colors[key];
+        else state.colors[key] = args.color.toLowerCase();
+        await this.store.set(state);
+        return { colors: state.colors };
+      }
       if (args.action === "save") {
         if (typeof args.title !== "string" || !args.title.trim()) throw new Error("\u9879\u76EE\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A");
         if (!Array.isArray(args.folders) || !args.folders.length) throw new Error("\u81F3\u5C11\u4FDD\u7559\u4E00\u4E2A\u6E90\u76EE\u5F55");
@@ -22624,6 +22637,7 @@ var ProjectManager = class {
       } else if (args.action === "remove") {
         state.projects = state.projects.filter((p) => p.id !== project2.id);
         state.bindings = Object.fromEntries(Object.entries(state.bindings).filter(([, id]) => id !== project2.id));
+        if (state.colors) delete state.colors[`project:${project2.id}`];
       } else if (args.action === "touch") project2.lastUsedAt = Date.now();
       else if (args.action === "pin") project2.pinned = !project2.pinned;
       else throw new Error("\u672A\u77E5\u64CD\u4F5C");
@@ -22768,8 +22782,9 @@ async function openLocalPath(action, input, agent, { platform = process.platform
 // src/index.js
 var inject = ["storageDomain", "commands", "tools", "systemPrompt", "workspaceRegistry", "connection", "agents"];
 var project = external_exports.object({ id: external_exports.string(), title: external_exports.string(), folders: external_exports.array(external_exports.string()).min(1), primary: external_exports.string(), sessionRoots: external_exports.array(external_exports.string()), pinned: external_exports.boolean(), revision: external_exports.number(), lastUsedAt: external_exports.number().nonnegative().optional() });
+var labelColor = external_exports.union([external_exports.enum(LABEL_COLORS), external_exports.string().length(7).regex(HEX_COLOR)]);
 var spec = defineDomain({ name: "dsh_project_manager", version: 1, tables: {}, global: {
-  schema: external_exports.object({ projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()) }),
+  schema: external_exports.object({ projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()), colors: external_exports.record(external_exports.string(), labelColor).optional() }),
   initial: { projects: [], bindings: {} }
 } });
 async function apply(ctx) {
@@ -22847,7 +22862,9 @@ async function apply(ctx) {
   const apiSchema = external_exports.object({
     sessionId: external_exports.string().min(1).max(500).optional(),
     args: external_exports.object({
-      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "open_file", "reveal_file", "check_directories", "touch"]),
+      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "open_file", "reveal_file", "check_directories", "touch", "set_color"]),
+      target: external_exports.enum(["project", "workspace", "session"]).optional(),
+      color: labelColor.nullable().optional(),
       path: external_exports.string().min(1).max(32768).optional(),
       id: external_exports.string().max(500).optional(),
       title: external_exports.string().max(500).optional(),

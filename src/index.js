@@ -1,13 +1,14 @@
 import { defineDomain } from '@deepseek-ai/dsh-storage-domain';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { z } from 'zod';
-import { ProjectManager, projectContext } from '../core.js';
+import { ProjectManager, projectContext, LABEL_COLORS, HEX_COLOR } from '../core.js';
 import { openDirectory, openLocalPath } from '../folder-opener.js';
 
 export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry', 'connection', 'agents'];
 const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), revision: z.number(), lastUsedAt: z.number().nonnegative().optional() });
+const labelColor = z.union([z.enum(LABEL_COLORS), z.string().length(7).regex(HEX_COLOR)]);
 const spec = defineDomain({ name: 'dsh_project_manager', version: 1, tables: {}, global: {
-  schema: z.object({ projects: z.array(project), bindings: z.record(z.string(), z.string()) }),
+  schema: z.object({ projects: z.array(project), bindings: z.record(z.string(), z.string()), colors: z.record(z.string(), labelColor).optional() }),
   initial: { projects: [], bindings: {} }
 } });
 
@@ -89,7 +90,8 @@ export async function apply(ctx) {
   const apiSchema = z.object({
     sessionId:z.string().min(1).max(500).optional(),
     args:z.object({
-      action:z.enum(['list','save','bind','remove','pin','open_folder','open_file','reveal_file','check_directories','touch']),
+      action:z.enum(['list','save','bind','remove','pin','open_folder','open_file','reveal_file','check_directories','touch','set_color']),
+      target:z.enum(['project','workspace','session']).optional(),color:labelColor.nullable().optional(),
       path:z.string().min(1).max(32768).optional(),
       id:z.string().max(500).optional(),title:z.string().max(500).optional(),
       folders:z.array(z.string().max(32768)).max(128).optional(),primary:z.string().max(32768).optional(),

@@ -2,6 +2,9 @@ import { realpath, stat } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
+export const LABEL_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
 export async function canonicalDirectory(value) {
   if (typeof value !== 'string' || !isAbsolute(value) || (process.platform === 'win32' && !/^(?:[a-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+)/i.test(value))) {
     throw new Error('请输入完整的绝对目录路径');
@@ -41,6 +44,18 @@ export class ProjectManager {
         return project;
       };
       if (args.action === 'list') return { ...state, activeProjectId: this.projectFor(session)?.id ?? null };
+      // 颜色只影响显示，独立于项目版本、目录和聊天绑定。
+      if (args.action === 'set_color') {
+        if (!['project', 'workspace', 'session'].includes(args.target) || typeof args.id !== 'string' || !args.id.trim() || args.id.length > 500) throw new Error('颜色标记目标无效');
+        if (args.color !== null && !LABEL_COLORS.includes(args.color) && !(typeof args.color === 'string' && args.color.length === 7 && HEX_COLOR.test(args.color))) throw new Error('颜色标记无效');
+        if (args.target === 'project') get();
+        const key = `${args.target}:${args.id}`;
+        state.colors = { ...state.colors };
+        if (args.color === null) delete state.colors[key];
+        else state.colors[key] = args.color.toLowerCase();
+        await this.store.set(state);
+        return { colors: state.colors };
+      }
       if (args.action === 'save') {
         if (typeof args.title !== 'string' || !args.title.trim()) throw new Error('项目名称不能为空');
         if (!Array.isArray(args.folders) || !args.folders.length) throw new Error('至少保留一个源目录');
@@ -66,6 +81,7 @@ export class ProjectManager {
       } else if (args.action === 'remove') {
         state.projects = state.projects.filter(p => p.id !== project.id);
         state.bindings = Object.fromEntries(Object.entries(state.bindings).filter(([, id]) => id !== project.id));
+        if (state.colors) delete state.colors[`project:${project.id}`];
       } else if (args.action === 'touch') project.lastUsedAt = Date.now();
       else if (args.action === 'pin') project.pinned = !project.pinned;
       else throw new Error('未知操作');

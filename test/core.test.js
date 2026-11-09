@@ -74,3 +74,41 @@ test('recent usage is persisted without changing configuration revisions',async(
   assert.ok(new ProjectManager(store).snapshot().projects[0].lastUsedAt > 1);
   assert.equal(m.snapshot().bindings.s2,p.id);
 });
+
+test('color labels persist independently, clear safely and preserve project revisions',async()=>{
+  const {manager:m,store}=fixture();const {project:p}=await save(m);
+  const label=(target,id,color)=>m.execute({action:'set_color',target,id,color},{header:{}});
+  await Promise.all([label('project',p.id,'red'),label('session','s1','blue'),label('workspace','w1','green')]);
+  const expected={[`project:${p.id}`]:'red','session:s1':'blue','workspace:w1':'green'};
+  assert.deepEqual(new ProjectManager(store).snapshot().colors,expected);
+  assert.equal(m.snapshot().projects[0].revision,p.revision);
+  assert.deepEqual(m.snapshot().bindings,{s1:p.id});
+  await save(m,{id:p.id,revision:p.revision,title:'Renamed',primary:'/b'});
+  assert.deepEqual(m.snapshot().colors,expected);
+  await label('session','s1',null);
+  assert.equal(m.snapshot().colors['session:s1'],undefined);
+  for(const [target,id,color] of [['project','missing','red'],['session','s1','#fff'],['session','','red'],['unknown','s1','red'],['session','s1',undefined]]) {
+    await assert.rejects(label(target,id,color));
+  }
+  for(const [target,id] of [['project',p.id],['session','s2'],['workspace','w2']]) {
+    await label(target,id,'#Aa12F0');
+    assert.equal(new ProjectManager(store).snapshot().colors[`${target}:${id}`],'#aa12f0');
+  }
+  for(const color of ['#12345g','#12345678','rgb(1,2,3)','var(--color)',' #123456',123456,{},'#123456\n']) {
+    const snapshot=m.snapshot();
+    await assert.rejects(label('session','s2',color));
+    assert.deepEqual(m.snapshot(),snapshot);
+  }
+  await label('session','s2',null);
+  assert.equal(new ProjectManager(store).snapshot().colors['session:s2'],undefined);
+  const before=m.snapshot();store.set=async()=>{throw Error('disk full');};
+  await assert.rejects(label('project',p.id,'purple'),/disk full/);
+  assert.deepEqual(m.snapshot(),before);
+});
+
+test('removing a project cleans its color but keeps independent session labels',async()=>{
+  const {manager:m}=fixture();const {project:p}=await save(m);
+  for(const [target,id] of [['project',p.id],['session','s1']])await m.execute({action:'set_color',target,id,color:'yellow'},{header:{}});
+  await m.execute({action:'remove',id:p.id},{header:{}});
+  assert.deepEqual(m.snapshot().colors,{'session:s1':'yellow'});
+});

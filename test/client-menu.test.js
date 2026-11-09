@@ -99,7 +99,7 @@ test('left project tree context menu targets workspace, edits directories and di
     const contextMenuMarkup=document.querySelector('[role=menu]').innerHTML;
     assert.ok(![...document.querySelectorAll('[role=menuitem]')].some(b=>b.textContent==='用于当前聊天'));
     assert.equal(document.activeElement.textContent,'编辑项目');
-    assert.deepEqual([...document.querySelectorAll('[role=menuitem]')].map(b=>b.textContent),['编辑项目','在资源管理器中打开','复制主要目录路径','新建会话','置顶 / 更多…','移除本地项目'],'the project menu offers no primary-directory switch');
+    assert.deepEqual([...document.querySelectorAll('[role=menuitem]')].map(b=>b.textContent),['编辑项目','在资源管理器中打开','复制主要目录路径','新建会话','颜色标记','置顶 / 更多…','移除本地项目'],'the project menu offers no primary-directory switch');
     await act(async()=>document.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true})));
     assert.equal(document.activeElement.textContent,'在资源管理器中打开');
     await click('编辑项目');

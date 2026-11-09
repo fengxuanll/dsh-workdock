@@ -32,6 +32,32 @@ test('background route reads and saves projects without executing commands or ap
     assert.equal(cwd,primary);assert.equal(workspaces.length,1);
     const listed=await (await post({sessionId:'chat',args:{action:'list'}})).json();
     assert.equal(listed.value.projects.length,1);
+    // 颜色操作不需要活动聊天，旧数据缺少 colors 字段也可直接升级。
+    const projectId=listed.value.projects[0].id;
+    for(const [target,id,color] of [['project',projectId,'purple'],['session','chat','blue'],['workspace','native','green']]) {
+      assert.equal((await post({args:{action:'set_color',target,id,color}})).status,200);
+    }
+    assert.deepEqual(state.colors,{[`project:${projectId}`]:'purple','session:chat':'blue','workspace:native':'green'});
+    const colors=(await (await post({args:{action:'list'}})).json()).value.colors;
+    assert.deepEqual(colors,state.colors);
+    for(const [target,id] of [['project',projectId],['session','chat'],['workspace','native']]) {
+      assert.equal((await post({args:{action:'set_color',target,id,color:'#FF8800'}})).status,200);
+      assert.equal(state.colors[`${target}:${id}`],'#ff8800');
+    }
+    assert.equal((await (await post({args:{action:'list'}})).json()).value.colors['session:chat'],'#ff8800');
+    assert.equal((await post({args:{action:'set_color',target:'session',id:'chat',color:null}})).status,200);
+    assert.equal(state.colors['session:chat'],undefined);
+    for(const args of [
+      {action:'set_color',target:'project',id:'missing',color:'red'},
+      {action:'set_color',target:'session',id:'chat',color:'invalid'},
+      {action:'set_color',target:'session',id:'chat'},
+      {action:'set_color',target:'invalid',id:'chat',color:'red'},
+    ])assert.equal((await post({args})).status,400);
+    for(const color of ['#fff','#12345g','#12345678','#123456\n','rgb(1,2,3)','var(--color)',123456,{}]) {
+      const before=structuredClone(state);
+      assert.equal((await post({args:{action:'set_color',target:'session',id:'chat',color}})).status,400);
+      assert.deepEqual(state,before);
+    }
     assert.equal((await post({sessionId:'missing',args:{action:'bind',id:listed.value.projects[0].id}})).status,409);
     assert.equal((await post({args:{action:'unknown'}})).status,400);
     const oversized=await route.fetch(new Request('https://host/api/dsh-workdock',{method:'POST',body:'x'.repeat(131073)}));

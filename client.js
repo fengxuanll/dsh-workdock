@@ -78,7 +78,15 @@ window.__ModuleLoader__.load({
 .dpm-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:14px;font-size:12px}.dpm-pagination label,.dpm-pagination nav{display:flex;align-items:center;gap:8px}.dpm-page :is(button,input,select):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-page .dpm-error{margin:6px 0}.dpm-page-nav{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
 @media(max-width:700px){.dpm-page{padding:16px 12px}.dpm-page-header{align-items:flex-start;margin-bottom:14px}.dpm-page h1{font-size:18px}.dpm-page-toolbar input{max-width:none}.dpm-page-toolbar .dpm-save{margin-left:0}.dpm-pagination{gap:10px}.dpm-table td,.dpm-table th{padding:10px 8px}}
 `;
-    const css = baseCss + folderCss + compactCss + pageCss;
+    const palette = {red:'#e27676',orange:'#df994f',yellow:'#c2ad44',green:'#64ae85',blue:'#6d9fe0',purple:'#ae8bda'};
+    const isHexColor = color => typeof color==='string' && color.length===7 && /^#[0-9a-f]{6}$/i.test(color);
+    const colorValue = color => palette[color] || (isHexColor(color)?color:undefined);
+    const colorCss = `
+[data-dpm-label-color] > span[class*="_title"],[data-dpm-label-color] > span[class*="_projectText"] > span[class*="_title"]{color:var(--dpm-label-color)!important}
+.dpm-color-dot{display:inline-block;width:9px;height:9px;flex:none;border-radius:50%;background:var(--dpm-color,transparent);border:1px solid currentColor;box-sizing:border-box;vertical-align:middle;margin-right:7px}.dpm-sidebar-color{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;padding:0;border:0;background:transparent;color:var(--dsw-alias-label-secondary,#aaa);border-radius:5px;cursor:pointer}.dpm-sidebar-color .dpm-color-dot{margin:0}.dpm-sidebar-color:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-sidebar-color:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:-2px}.dpm-color-menu button[aria-checked=true]{background:var(--dsw-alias-bg-hover,#ffffff15)}
+.dpm-color-custom{display:grid;gap:7px;margin:4px 6px;padding:9px 0 2px;border-top:1px solid var(--dsw-alias-border-l3,#555);font-size:12px}.dpm-color-inputs{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:7px}.dpm-color-custom input{height:30px;padding:4px 7px;border-radius:5px;min-width:0;font-size:12px}.dpm-color-custom input[type=color]{padding:2px;cursor:pointer}.dpm-color-custom input:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:1px}.dpm-color-custom input[aria-invalid=true]{border-color:#ef8880}.dpm-color-hint{font-size:11px;color:var(--dsw-alias-label-secondary,#aaa)}.dpm-color-custom button{border:1px solid var(--dsw-alias-border-l3,#555);padding:3px 8px;text-align:center}
+`;
+    const css = baseCss + folderCss + compactCss + pageCss + colorCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{more:'置顶 / 更多…',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
@@ -95,6 +103,8 @@ window.__ModuleLoader__.load({
     Object.assign(en,{fileMenu:'File actions',openFile:'Open file',revealFile:'Open containing folder'});
     Object.assign(zh,{backToChat:'返回聊天',pageHint:'集中管理项目与工作目录',projectCount:'项目总数',folderCount:'源目录数',actions:'操作',pageSize:'每页',previousPage:'上一页',nextPage:'下一页',pageStatus:'第 {page} / {pages} 页，共 {count} 个项目',loading:'正在加载项目…'});
     Object.assign(en,{backToChat:'Back to chat',pageHint:'Manage projects and working directories',projectCount:'Total projects',folderCount:'Folders',actions:'Actions',pageSize:'Per page',previousPage:'Previous page',nextPage:'Next page',pageStatus:'Page {page} / {pages}, {count} projects',loading:'Loading projects…'});
+    Object.assign(zh,{colorLabel:'颜色标记',colorNone:'无颜色',colorSaved:'颜色标记已更新',colorCustom:'自定义颜色',colorPicker:'选择自定义颜色',colorHex:'HEX 色值',colorHexHint:'格式：#RRGGBB，如 #FF8800',colorApply:'应用',red:'红色',orange:'橙色',yellow:'黄色',green:'绿色',blue:'蓝色',purple:'紫色'});
+    Object.assign(en,{colorLabel:'Color label',colorNone:'No color',colorSaved:'Color label updated',colorCustom:'Custom color',colorPicker:'Choose custom color',colorHex:'HEX color',colorHexHint:'Format: #RRGGBB, e.g. #FF8800',colorApply:'Apply',red:'Red',orange:'Orange',yellow:'Yellow',green:'Green',blue:'Blue',purple:'Purple'});
     function folderLabel(path, folders) {
       const parts = path.replace(/[\\/]+$/,'').split(/[\\/]/);
       for(let n=1;n<=parts.length;n++) {
@@ -134,6 +144,17 @@ window.__ModuleLoader__.load({
         let projectVersion = 0;
         const projectListeners = new Set();
         const projectSource = {subscribe(fn){projectListeners.add(fn);return()=>projectListeners.delete(fn);},getSnapshot:()=>projectVersion};
+        let colorCache = {}, colorRequest = null, colorVersion = 0;
+        const colorListeners = new Set();
+        const colorSource = {subscribe(fn){colorListeners.add(fn);return()=>colorListeners.delete(fn);},getSnapshot:()=>colorVersion};
+        function publishColor(request){colorRequest=request;colorVersion++;for(const fn of colorListeners)fn();}
+        const workspaceColorTarget = workspace => {const project=matchingProject(workspace);return project?{target:'project',id:project.id}:{target:'workspace',id:workspace.workspaceId};};
+        const colorFor = target => colorCache[`${target.target}:${target.id}`] ?? null;
+        function openColor(target,trigger,position){
+          const rect=position?null:trigger.getBoundingClientRect();
+          publishColor({...target,trigger,x:position?.left??rect.left,y:position?.top??rect.bottom});
+        }
+        function ColorDot({color}){return h('span',{className:'dpm-color-dot',style:{'--dpm-color':colorValue(color)},'aria-hidden':true});}
         let refreshNativeCards = () => {};
         let hover = null;
         const hoverListeners = new Set();
@@ -224,7 +245,7 @@ window.__ModuleLoader__.load({
             if (!(target instanceof Element) || target.closest('[data-row-key^="session:"]')) return null;
             const button = target.closest('button');
             const row = button?.closest('[data-row-key^="workspace:"]');
-            return row && row.querySelector('button') === button ? row : null;
+            return row && row.querySelector('button:not(.dpm-sidebar-color)') === button ? row : null;
           }
           function onMenuPointer(event) {
             if (event.button === 0 && addWorkspaceButton(event.target)) { event.stopPropagation(); return; }
@@ -302,8 +323,10 @@ window.__ModuleLoader__.load({
           const value=result.value;
           if(['list','save','bind'].includes(args.action))updateWarnings(value.syncWarnings||[]);
           if(args.action==='list')projectCache=value.projects;
+          if(args.action==='list'||args.action==='set_color') {colorCache=value.colors||{};colorVersion++;for(const fn of colorListeners)fn();}
           else if(args.action==='save'&&value.project)projectCache=[...projectCache.filter(p=>p.id!==value.project.id),value.project];
           else if(args.action==='remove')projectCache=projectCache.filter(p=>p.id!==args.id);
+          if(args.action==='remove'){delete colorCache[`project:${args.id}`];colorVersion++;for(const fn of colorListeners)fn();}
           if(['save','bind','remove'].includes(args.action)){projectVersion++;for(const fn of projectListeners)fn();}
           refreshNativeCards();
           if(hover){const project=matchingProject(hover.workspace);publishHover(project?{...hover,project}:null);}
@@ -311,11 +334,95 @@ window.__ModuleLoader__.load({
         }
         const PAGE_ID = 'dsh-workdock-projects';
         // This is a native main-panel switch: the sidebar and existing chat stay
+        // 原生树会虚拟化和重绘；仅管理自己注入的按钮，不替换状态图标。
+        ctx.effect(()=>{
+          const mounted=new Map();
+          const clearLabel=row=>{row.removeAttribute('data-dpm-label-color');row.style.removeProperty('--dpm-label-color');};
+          const style=document.createElement('style');style.textContent=colorCss;document.head.append(style);
+          const sync=()=>{
+            for(const [row,button] of mounted)if(!row.isConnected){clearLabel(row);button.remove();mounted.delete(row);}
+            const workspaces=ctx.workspaces.list.getSnapshot().items;
+            for(const row of document.querySelectorAll('[data-row-key^="workspace:"],[data-row-key^="session:"]')){
+              const key=row.getAttribute('data-row-key'),isSession=key.startsWith('session:');
+              const workspace=isSession?null:workspaces.find(w=>w.workspaceId===key.slice(10));
+              if(!isSession&&!workspace){clearLabel(row);mounted.get(row)?.remove();mounted.delete(row);continue;}
+              const target=isSession?{target:'session',id:key.slice(8)}:workspaceColorTarget(workspace);
+              let button=mounted.get(row);
+              if(!button){
+                button=document.createElement('button');button.type='button';button.className='dpm-sidebar-color';
+                button.setAttribute('aria-haspopup','menu');
+                const dot=document.createElement('span');dot.className='dpm-color-dot';dot.setAttribute('aria-hidden','true');button.append(dot);
+                button.addEventListener('pointerdown',e=>e.stopPropagation());
+                button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openColor(button.colorTarget,button);});
+                mounted.set(row,button);
+              }
+              button.colorTarget=target;
+              const color=colorFor(target),label=t('colorLabel')+': '+(isHexColor(color)?color:t(color||'colorNone'));
+              if(color){row.dataset.dpmLabelColor=color;row.style.setProperty('--dpm-label-color',colorValue(color));}
+              else clearLabel(row);
+              if(button.title!==label){button.title=label;button.setAttribute('aria-label',label);}
+              if(button.dataset.color!==(color||'')){button.dataset.color=color||'';button.firstChild.style.setProperty('--dpm-color',colorValue(color)||'transparent');}
+              if(button.parentElement!==row)row.append(button);
+            }
+          };
+          const observer=new MutationObserver(sync);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-row-key']});
+          colorListeners.add(sync);projectListeners.add(sync);
+          const unsubscribe=ctx.workspaces.list.subscribe?.(sync);
+          sync();call(undefined,{action:'list'}).catch(e=>announce(e.message,true));
+          return()=>{observer.disconnect();unsubscribe?.();colorListeners.delete(sync);projectListeners.delete(sync);for(const [row,button] of mounted){clearLabel(row);button.remove();}mounted.clear();style.remove();};
+        });
+        function ColorOverlay(){
+          useSyncExternalStore(colorSource.subscribe,colorSource.getSnapshot);
+          const request=colorRequest,menu=useRef(null),lock=useRef(false),current=useRef(request);current.current=request;
+          const [busy,setBusy]=useState(false),[error,setError]=useState(''),[position,setPosition]=useState({left:8,top:8});
+          const [custom,setCustom]=useState('#6d9fe0');
+          const validCustom=isHexColor(custom);
+          const close=(focus=false)=>{publishColor(null);if(focus)request?.trigger?.focus();};
+          useEffect(()=>{
+            setError('');setBusy(false);lock.current=false;
+            if(!request)return;
+            setCustom(colorValue(colorFor(request))||palette.blue);
+            const rect=menu.current?.getBoundingClientRect();
+            setPosition({left:Math.max(8,Math.min(request.x,window.innerWidth-(rect?.width||206)-8)),top:Math.max(8,Math.min(request.y,window.innerHeight-(rect?.height||260)-8))});
+            (menu.current?.querySelector('[aria-checked=true]')||menu.current?.querySelector('input[type=text]'))?.focus();
+            const outside=e=>{if(!menu.current?.contains(e.target))close();};
+            const escape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}};
+            const dismiss=()=>close();
+            document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);window.addEventListener('resize',dismiss);document.addEventListener('scroll',dismiss,true);
+            return()=>{document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);window.removeEventListener('resize',dismiss);document.removeEventListener('scroll',dismiss,true);};
+          },[request]);
+          async function select(color){
+            if(lock.current)return;lock.current=true;setBusy(true);setError('');
+            try{await call(undefined,{action:'set_color',target:request.target,id:request.id,color});if(current.current===request){close(true);announce(t('colorSaved'));}}
+            catch(e){if(current.current===request)setError(e.message);}
+            finally{if(current.current===request){lock.current=false;setBusy(false);}}
+          }
+          function keyboard(e){
+            if(!['ArrowDown','ArrowUp','Home','End','Tab'].includes(e.key))return;
+            if(e.key!=='Tab'&&e.target.matches('input'))return;
+            const items=[...menu.current.querySelectorAll(e.key==='Tab'?'button:not(:disabled),input:not(:disabled)':'[role=menuitemradio]:not(:disabled)')];if(!items.length)return;e.preventDefault();
+            const index=items.indexOf(document.activeElement),back=e.key==='ArrowUp'||e.key==='Tab'&&e.shiftKey;
+            items[e.key==='Home'?0:e.key==='End'?items.length-1:(index+(back?-1:1)+items.length)%items.length].focus();
+          }
+          if(!request)return null;
+          return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu dpm-color-menu',role:'menu','aria-label':t('colorLabel'),style:position,onKeyDown:keyboard},
+            h('div',{className:'dpm-menu-title'},t('colorLabel')),
+            [null,...Object.keys(palette)].map(color=>h('button',{key:color||'none',type:'button',role:'menuitemradio','aria-checked':colorFor(request)===color,disabled:busy,onClick:()=>select(color)},h(ColorDot,{color}),t(color||'colorNone'))),
+            h('form',{className:'dpm-color-custom','aria-label':t('colorCustom'),onSubmit:e=>{e.preventDefault();if(validCustom)select(custom.toLowerCase());}},
+              h('label',{htmlFor:'dpm-color-hex'},t('colorCustom')),
+              h('div',{className:'dpm-color-inputs'},
+                h('input',{type:'color','aria-label':t('colorPicker'),disabled:busy,value:validCustom?custom.toLowerCase():palette.blue,onChange:e=>setCustom(e.target.value)}),
+                h('input',{id:'dpm-color-hex',type:'text','aria-label':t('colorHex'),'aria-describedby':'dpm-color-hint','aria-invalid':!validCustom,disabled:busy,value:custom,placeholder:'#FF8800',maxLength:7,spellCheck:false,onChange:e=>setCustom(e.target.value)})),
+              h('span',{id:'dpm-color-hint',className:'dpm-color-hint'},t('colorHexHint')),
+              h('button',{type:'submit',disabled:busy||!validCustom},t('colorApply'))),
+            error&&h('div',{className:'dpm-error',role:'alert'},error)));
+        }
         // owned by Harness, rather than being covered by a fullscreen overlay.
         function openProjects(){publishTree(null);ctx.layout.selectPanel(PAGE_ID);}
         function ProjectPage(){return h(Manager,{page:true,initialOpen:true,hiddenLauncher:true});}
         function Manager({ sessionId: providedId, dock = false, page = false, initialProject = null, initialOpen = false, hiddenLauncher = false, workspaceId, onClose }) {
           const version = useSyncExternalStore(projectSource.subscribe, projectSource.getSnapshot);
+          useSyncExternalStore(colorSource.subscribe,colorSource.getSnapshot);
           const sessions = useSyncExternalStore(ctx.sessions.list.subscribe, ctx.sessions.list.getSnapshot);
           const sessionId = providedId ?? Object.values(sessions.byId).find(s => (s.retainedBy.mainView ?? 0) > 0)?.id;
           const [open,setOpen]=useState(initialOpen), [state,setState]=useState({projects:[],activeProjectId:null,directoryWarnings:[]});
@@ -442,7 +549,7 @@ window.__ModuleLoader__.load({
           const visible=ordered.slice((currentPage-1)*pageSize,currentPage*pageSize);
           useEffect(()=>{setPageNumber(n=>Math.min(n,pages));},[pages]);
           const warnings=(items,projectId)=>items.filter(w=>!projectId||w.projectId===projectId).map(w=>h('div',{key:w.path,className:'dpm-error',role:'status'},w.path+': '+w.error));
-          const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
+          const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('colorLabel'),e=>openColor({target:'project',id:p.id},e.currentTarget)),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
           return h('div',{className:page?'dpm dpm-page':'dpm'},h('style',null,css),
             !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock dpm-mini':'dpm-launch',onClick:dock?()=>publishTree({manage:true,project:active?structuredClone(active):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence}):openProjects,disabled:dock&&(loading||busy||!sessionId),title:dock?t(active?'edit':'add'):active?.primary},'▱ '+(dock&&active?active.title:t('title'))),
             page&&h('section',{className:'dpm-page-content',ref:draft?undefined:dialog,tabIndex:-1,'aria-label':t('title'),inert:draft?'':undefined},
@@ -455,7 +562,7 @@ window.__ModuleLoader__.load({
               h('div',{className:'dpm-table-scroll','aria-busy':loading},h('table',{className:'dpm-table','aria-label':t('title')},
                 h('thead',null,h('tr',null,...['name','primary','folderCount','actions'].map(key=>h('th',{key,scope:'col'},t(key))))),
                 h('tbody',null,visible.map(p=>h('tr',{className:'dpm-card',key:p.id,'data-project-id':p.id},
-                  h('td',null,h('strong',null,(p.pinned?'⌖ ':'')+p.title),p.id===state.activeProjectId&&h('span',{className:'dpm-badge'},t('active'))),
+                  h('td',null,h(ColorDot,{color:colorFor({target:'project',id:p.id})}),h('strong',{style:{color:colorValue(colorFor({target:'project',id:p.id}))}},(p.pinned?'⌖ ':'')+p.title),p.id===state.activeProjectId&&h('span',{className:'dpm-badge'},t('active'))),
                   h('td',null,h('div',{className:'dpm-path',title:p.primary},p.primary),warnings(state.directoryWarnings||[],p.id)),
                   h('td',{className:'dpm-count',title:p.folders.join('\n')},p.folders.length),h('td',{className:'dpm-actions'},projectActions(p)))),
                   !visible.length&&h('tr',null,h('td',{colSpan:4,className:'dpm-table-empty',role:'status'},t(loading?'loading':query?'noResults':'empty')))))),
@@ -654,6 +761,7 @@ window.__ModuleLoader__.load({
           return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('title'),style:position,onKeyDown:keyboard},
             h('div',{className:'dpm-menu-title'},request.workspace.title),
             item('edit'),item('openFolder'),item('copy'),item('newChat'),
+            h('button',{type:'button',role:'menuitem',disabled:busy,onClick:()=>{const target=workspaceColorTarget(request.workspace);openColor(target,request.nativeMenu||request.trigger,position);closeMenu();}},t('colorLabel')),
             h('div',{className:'dpm-menu-separator',role:'separator'}),item('more'),item('remove'),error&&h('div',{className:'dpm-error',role:'alert'},error)));
         }
         function ExperienceOverlay() {
@@ -723,6 +831,7 @@ window.__ModuleLoader__.load({
           return()=>{observer.disconnect();for(const [host,button] of mounted){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();}mounted.clear();for(const button of addButtons.values()){button.removeEventListener('click',openAddProject);button.remove();}addButtons.clear();style.remove();};
         });
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-colors',order:23}, ColorOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-file-menu',order:22}, FileOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-primary-tooltip',order:19}, PrimaryDirectoryTooltip));
