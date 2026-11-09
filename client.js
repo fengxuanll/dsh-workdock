@@ -86,7 +86,12 @@ window.__ModuleLoader__.load({
 .dpm-color-dot{display:inline-block;width:9px;height:9px;flex:none;border-radius:50%;background:var(--dpm-color,transparent);border:1px solid currentColor;box-sizing:border-box;vertical-align:middle;margin-right:7px}.dpm-sidebar-color{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;padding:0;border:0;background:transparent;color:var(--dsw-alias-label-secondary,#aaa);border-radius:5px;cursor:pointer}.dpm-sidebar-color .dpm-color-dot{margin:0}.dpm-sidebar-color:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-sidebar-color:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:-2px}.dpm-color-menu button[aria-checked=true]{background:var(--dsw-alias-bg-hover,#ffffff15)}
 .dpm-color-custom{display:grid;gap:7px;margin:4px 6px;padding:9px 0 2px;border-top:1px solid var(--dsw-alias-border-l3,#555);font-size:12px}.dpm-color-inputs{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:7px}.dpm-color-custom input{height:30px;padding:4px 7px;border-radius:5px;min-width:0;font-size:12px}.dpm-color-custom input[type=color]{padding:2px;cursor:pointer}.dpm-color-custom input:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:1px}.dpm-color-custom input[aria-invalid=true]{border-color:#ef8880}.dpm-color-hint{font-size:11px;color:var(--dsw-alias-label-secondary,#aaa)}.dpm-color-custom button{border:1px solid var(--dsw-alias-border-l3,#555);padding:3px 8px;text-align:center}
 `;
-    const css = baseCss + folderCss + compactCss + pageCss + colorCss;
+    const turnCss = `
+.dpm-turn-hidden{display:block!important}.dpm-turn-hidden:not(.dpm-turn-placeholder){height:0!important;min-height:0!important;margin-block:0!important;padding-block:0!important;border-block-width:0!important;overflow:hidden!important}.dpm-turn-hidden > :not(.dpm-turn-restore){display:none!important}
+.dpm-turn-placeholder{margin-block:0!important;padding-block:0!important}.dpm-turn-restore{display:flex;align-items:center;gap:8px;min-height:22px;padding:0;margin:0;color:var(--dsw-alias-label-secondary,#aaa);font-size:12px;line-height:22px}.dpm-turn-restore button,.dpm-turn-action{font:inherit;color:var(--dsw-alias-label-secondary,#aaa);background:transparent;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px}.dpm-turn-restore button:hover,.dpm-turn-action:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-turn-restore button:focus-visible,.dpm-turn-action:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}
+.dpm-turn-restore button{padding:0 4px;line-height:22px}.dpm-turn-action-seat{display:inline-flex;align-items:center;flex:none}.dpm-turn-hide-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:4px;flex:none}.dpm-turn-hide-button:disabled{opacity:.4;cursor:default}
+`;
+    const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{more:'更多…',treeOrderUnavailable:'当前宿主不支持项目排序，请升级 Harness。',treeProjectUnavailable:'项目已不存在，请刷新后重试。',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
@@ -105,6 +110,8 @@ window.__ModuleLoader__.load({
     Object.assign(en,{backToChat:'Back to chat',pageHint:'Manage projects and working directories',projectCount:'Total projects',folderCount:'Folders',actions:'Actions',pageSize:'Per page',previousPage:'Previous page',nextPage:'Next page',pageStatus:'Page {page} / {pages}, {count} projects',loading:'Loading projects…'});
     Object.assign(zh,{colorLabel:'颜色标记',colorNone:'无颜色',colorSaved:'颜色标记已更新',colorCustom:'自定义颜色',colorPicker:'选择自定义颜色',colorHex:'HEX 色值',colorHexHint:'格式：#RRGGBB，如 #FF8800',colorApply:'应用',red:'红色',orange:'橙色',yellow:'黄色',green:'绿色',blue:'蓝色',purple:'紫色'});
     Object.assign(en,{colorLabel:'Color label',colorNone:'No color',colorSaved:'Color label updated',colorCustom:'Custom color',colorPicker:'Choose custom color',colorHex:'HEX color',colorHexHint:'Format: #RRGGBB, e.g. #FF8800',colorApply:'Apply',red:'Red',orange:'Orange',yellow:'Yellow',green:'Green',blue:'Blue',purple:'Purple'});
+    Object.assign(zh,{hideTurn:'隐藏本轮',hiddenTurn:'本轮对话已隐藏',restoreTurn:'恢复显示',restoreTurns:'恢复全部隐藏轮次',hideTurnNote:'仅在当前浏览器隐藏；原始历史和模型上下文不变，不减少上下文用量。',hideStorageError:'无法保存隐藏状态，请检查浏览器本地存储权限。'});
+    Object.assign(en,{hideTurn:'Hide turn',hiddenTurn:'This turn is hidden',restoreTurn:'Show turn',restoreTurns:'Show all hidden turns',hideTurnNote:'Hidden only in this browser. History and model context are unchanged; context usage is not reduced.',hideStorageError:'Cannot save hidden turns. Check browser local storage permissions.'});
     function folderLabel(path, folders) {
       const parts = path.replace(/[\\/]+$/,'').split(/[\\/]/);
       for(let n=1;n<=parts.length;n++) {
@@ -140,6 +147,120 @@ window.__ModuleLoader__.load({
           try {if(!navigator.clipboard?.writeText)throw new Error(t('clipboardUnavailable'));await navigator.clipboard.writeText(path);announce(t('copied')+': '+path);}
           catch(e){announce(e.message,true);}
         }
+        // Presentation-only preferences: never touch Session events, model surfaces,
+        // summaries or host persistence. Store identities only, not message text.
+        const HIDDEN_TURNS_KEY='dsh-workdock-hidden-turns:v1:';
+        const validTurn=value=>typeof value==='string'&&/^(0|[1-9]\d*)$/.test(value)&&Number.isSafeInteger(Number(value));
+        const hiddenTurns=new Map(),hiddenListeners=new Set();
+        let hiddenVersion=0,refreshHiddenTurns=()=>{};
+        const hiddenSource={subscribe(fn){hiddenListeners.add(fn);return()=>hiddenListeners.delete(fn);},getSnapshot:()=>hiddenVersion};
+        const hiddenKey=sessionId=>HIDDEN_TURNS_KEY+encodeURIComponent(sessionId);
+        function readHiddenTurns(sessionId){
+          try{const value=JSON.parse(localStorage.getItem(hiddenKey(sessionId))||'[]');return new Set(Array.isArray(value)?value.filter(validTurn):[]);}catch{return new Set();}
+        }
+        function turnsFor(sessionId){if(!hiddenTurns.has(sessionId))hiddenTurns.set(sessionId,readHiddenTurns(sessionId));return hiddenTurns.get(sessionId);}
+        function publishHiddenTurns(){hiddenVersion++;refreshHiddenTurns();for(const fn of hiddenListeners)fn();}
+        function changeHiddenTurns(sessionId,turn,hidden){
+          if(!sessionId||(turn!==null&&!validTurn(String(turn))))return;
+          // Re-read before writes so another tab's unrelated hidden turns survive.
+          const next=readHiddenTurns(sessionId);
+          if(turn===null)next.clear();else if(hidden)next.add(String(turn));else next.delete(String(turn));
+          try{if(next.size)localStorage.setItem(hiddenKey(sessionId),JSON.stringify([...next]));else localStorage.removeItem(hiddenKey(sessionId));}
+          catch{announce(t('hideStorageError'),true);return;}
+          hiddenTurns.set(sessionId,next);publishHiddenTurns();return true;
+        }
+        function HideTurn({turn}){
+          const {createPortal}=require('react-dom');
+          // turnTail receives a scoped Turn location, not the numeric DOM turn.
+          // Keep numeric owners working for older hosts and lightweight previews.
+          const turnId=turn!==null&&typeof turn==='object'?turn.turn:turn;
+          const origin=useRef(null),[target,setTarget]=useState(null);
+          useEffect(()=>{
+            // The public turnTail slot sits above the native action row. Portal
+            // only our own control; never move React-owned native buttons/time.
+            const tail=origin.current?.closest('[data-turn-tail]');if(!tail)return;
+            const mount=document.createElement('span');mount.className='dpm-turn-action-seat';
+            const sync=()=>{
+              const row=[...tail.querySelectorAll('[data-clock="end"]')].find(node=>node.closest('[data-turn-tail]')===tail);
+              const endInfo=row?.lastElementChild,clock=endInfo?.lastElementChild;
+              if(endInfo?.tagName==='SPAN'&&[...endInfo.classList].some(name=>name.endsWith('_endInfo'))&&clock?.tagName==='SPAN'&&[...clock.classList].some(name=>name.endsWith('_timeEnd'))){
+                if(mount.parentNode!==endInfo||mount.nextSibling!==clock)endInfo.insertBefore(mount,clock);
+                setTarget(current=>current===mount?current:mount);
+              }else{mount.remove();setTarget(current=>current===null?current:null);}
+            };
+            const observer=new MutationObserver(sync);observer.observe(tail,{childList:true,subtree:true});sync();
+            return()=>{observer.disconnect();mount.remove();};
+          },[]);
+          const button=h('button',{type:'button',className:'dpm-turn-action dpm-turn-hide-button','data-dpm-hide-turn':turnId,disabled:!validTurn(String(turnId)),'aria-label':t('hideTurn'),title:`${t('hideTurn')} — ${t('hideTurnNote')}`,onClick:event=>{
+            const occurrence=event.currentTarget.closest('[data-conversation-session]');
+            const sessionId=occurrence?.getAttribute('data-conversation-session');
+            if(changeHiddenTurns(sessionId,turnId,true)){
+              const first=[...occurrence.querySelectorAll('.dpm-turn-placeholder')].find(node=>node.getAttribute('data-chat-turn')===String(turnId)&&node.closest('[data-conversation-session]')===occurrence);
+              first?.querySelector('.dpm-turn-restore button')?.focus();
+            }
+          }},h('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.6,strokeLinecap:'round',strokeLinejoin:'round','aria-hidden':true},h('path',{d:'m3 3 18 18M10.58 10.58a2 2 0 0 0 2.84 2.84M9.88 5.09A10.94 10.94 0 0 1 12 5c5.5 0 9 7 9 7a17 17 0 0 1-3.42 4.42M6.53 6.53A18.35 18.35 0 0 0 3 12s3.5 7 9 7a10.94 10.94 0 0 0 5.47-1.53'})));
+          return h(React.Fragment,null,h('span',{ref:origin,hidden:true,'data-dpm-turn-origin':''}),target?createPortal(button,target):null);
+        }
+        function RestoreHiddenTurns({sessionId}){
+          useSyncExternalStore(hiddenSource.subscribe,hiddenSource.getSnapshot);
+          const count=sessionId?turnsFor(sessionId).size:0;
+          return count?h('button',{type:'button',className:'dpm-turn-action',title:t('hideTurnNote'),onClick:()=>changeHiddenTurns(sessionId,null,false)},`${t('restoreTurns')} (${count})`):null;
+        }
+        ctx.effect(()=>{
+          const marked=new Set(),restores=new Map(),hiddenChildren=new Map();
+          const style=document.createElement('style');style.textContent=turnCss;document.head.append(style);
+          const clean=node=>{
+            node.classList.remove('dpm-turn-hidden','dpm-turn-placeholder');restores.get(node)?.remove();restores.delete(node);
+            for(const child of hiddenChildren.get(node)??[])child.removeAttribute('hidden');hiddenChildren.delete(node);
+          };
+          const options={childList:true,subtree:true,attributes:true,attributeFilter:['data-chat-turn','data-conversation-session','class']};
+          const observer=new MutationObserver(sync);
+          function sync(){
+            observer.disconnect();
+            try{
+              const current=new Set();
+              for(const occurrence of document.querySelectorAll('[data-conversation-session][data-conversation-region="chat"]')){
+                const sessionId=occurrence.getAttribute('data-conversation-session');if(!sessionId)continue;
+                const hidden=turnsFor(sessionId),groups=new Map();
+                for(const node of occurrence.querySelectorAll('[data-chat-turn][data-chat-flow-key]')){
+                  // Embedded conversations and nested process members own separate
+                  // seats. Only hide outer seats within this exact occurrence.
+                  if(node.closest('[data-conversation-session]')!==occurrence||node.closest('[data-conversation-region]')!==occurrence)continue;
+                  const turn=node.getAttribute('data-chat-turn');if(!validTurn(turn))continue;
+                  const parent=node.parentElement?.closest('[data-chat-turn]');
+                  if(parent&&occurrence.contains(parent)&&parent.getAttribute('data-chat-turn')===turn)continue;
+                  if(!groups.has(turn))groups.set(turn,[]);groups.get(turn).push(node);
+                }
+                for(const [turn,nodes] of groups){
+                  for(const [index,node] of nodes.entries()){
+                    if(!hidden.has(turn)){if(marked.has(node))clean(node);continue;}
+                    current.add(node);if(!node.classList.contains('dpm-turn-hidden'))node.classList.add('dpm-turn-hidden');
+                    const first=index===0;if(node.classList.contains('dpm-turn-placeholder')!==first)node.classList.toggle('dpm-turn-placeholder',first);
+                    // Keep outer seats in flow with zero-height boxes so native
+                    // binary-search scrolling still sees monotonic positions.
+                    // Native anchor queries exclude [hidden] descendants.
+                    let children=hiddenChildren.get(node);if(!children){children=new Set();hiddenChildren.set(node,children);}
+                    for(const child of children)if(child.parentElement!==node){child.removeAttribute('hidden');children.delete(child);}
+                    for(const child of node.children)if(child!==restores.get(node)&&!child.hasAttribute('hidden')){child.setAttribute('hidden','');children.add(child);}
+                    if(!first){restores.get(node)?.remove();restores.delete(node);continue;}
+                    let control=restores.get(node);
+                    if(!control){control=document.createElement('div');control.className='dpm-turn-restore';const label=document.createElement('span'),button=document.createElement('button');button.type='button';control.append(label,button);restores.set(node,control);}
+                    if(control.firstChild.textContent!==t('hiddenTurn'))control.firstChild.textContent=t('hiddenTurn');
+                    const button=control.lastChild;if(button.textContent!==t('restoreTurn'))button.textContent=t('restoreTurn');button.title=t('hideTurnNote');button.onclick=()=>{
+                      if(changeHiddenTurns(sessionId,turn,false))occurrence.querySelector(`[data-dpm-hide-turn="${turn}"]`)?.focus();
+                    };
+                    if(control.parentElement!==node)node.append(control);
+                  }
+                }
+              }
+              for(const node of marked)if(!current.has(node))clean(node);
+              marked.clear();for(const node of current)marked.add(node);
+            }finally{observer.observe(document.body,options);}
+          }
+          function storage(event){if(event.key===null||event.key.startsWith(HIDDEN_TURNS_KEY)){hiddenTurns.clear();publishHiddenTurns();}}
+          refreshHiddenTurns=sync;window.addEventListener('storage',storage);sync();
+          return()=>{refreshHiddenTurns=()=>{};observer.disconnect();window.removeEventListener('storage',storage);for(const node of marked)clean(node);marked.clear();style.remove();};
+        });
         let projectCache = [];
         let projectVersion = 0;
         const projectListeners = new Set();
@@ -913,6 +1034,8 @@ window.__ModuleLoader__.load({
           observer.observe(document.body,{childList:true,subtree:true,characterData:true});sync();
           return()=>{observer.disconnect();for(const [host,button] of mounted){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();}mounted.clear();for(const button of addButtons.values()){button.removeEventListener('click',openAddProject);button.remove();}addButtons.clear();style.remove();};
         });
+        ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({name:'conversation.chat.turnTail',id:'dsh-workdock-hide-turn',order:90}, HideTurn));
+        ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({name:'conversation.input.dock',id:'dsh-workdock-restore-turns',order:90,inject:sessionId=>({sessionId})}, RestoreHiddenTurns));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-colors',order:23}, ColorOverlay));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-tree-menu',order:20}, TreeOverlay));
