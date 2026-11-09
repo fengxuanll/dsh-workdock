@@ -422,19 +422,26 @@ window.__ModuleLoader__.load({
           const [busy,setBusy]=useState(false),[error,setError]=useState(''),[position,setPosition]=useState({left:8,top:8});
           const [custom,setCustom]=useState('#6d9fe0');
           const validCustom=isHexColor(custom);
-          const close=(focus=false)=>{publishColor(null);if(focus)request?.trigger?.focus();};
+          const close=(focus=false)=>{publishColor(null);if(focus)request?.trigger?.focus({preventScroll:true});};
           useEffect(()=>{
             setError('');setBusy(false);lock.current=false;
             if(!request)return;
             setCustom(colorValue(colorFor(request))||palette.blue);
             const rect=menu.current?.getBoundingClientRect();
             setPosition({left:Math.max(8,Math.min(request.x,window.innerWidth-(rect?.width||206)-8)),top:Math.max(8,Math.min(request.y,window.innerHeight-(rect?.height||260)-8))});
-            (menu.current?.querySelector('[aria-checked=true]')||menu.current?.querySelector('input[type=text]'))?.focus();
+            (menu.current?.querySelector('[aria-checked=true]')||menu.current?.querySelector('input[type=text]'))?.focus({preventScroll:true});
             const outside=e=>{if(!menu.current?.contains(e.target))close();};
             const escape=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}};
             const dismiss=()=>close();
-            document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);window.addEventListener('resize',dismiss);document.addEventListener('scroll',dismiss,true);
-            return()=>{document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);window.removeEventListener('resize',dismiss);document.removeEventListener('scroll',dismiss,true);};
+            // Native session titles marquee via scrollLeft while hovered. Capture
+            // sees those non-bubbling events too, but they do not move the anchor.
+            // Likewise, scrolling the picker or another pane must not dismiss it.
+            const onScroll=e=>{
+              if(menu.current?.contains(e.target))return;
+              if(e.target===document||e.target===window||e.target?.contains?.(request.trigger))close();
+            };
+            document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);window.addEventListener('resize',dismiss);document.addEventListener('scroll',onScroll,true);
+            return()=>{document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);window.removeEventListener('resize',dismiss);document.removeEventListener('scroll',onScroll,true);};
           },[request]);
           async function select(color){
             if(lock.current)return;lock.current=true;setBusy(true);setError('');

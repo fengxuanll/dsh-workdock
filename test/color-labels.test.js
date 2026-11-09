@@ -65,11 +65,30 @@ test('project and session color controls persist, stay independent and survive n
     assert.equal(rowClicks,0);
     assert.equal(document.querySelectorAll('[role=menuitemradio]').length,7);
     assert.equal(document.activeElement.textContent,'蓝色');
+    // Native long titles marquee via scrollLeft on hover. Their non-bubbling
+    // scroll events must not dismiss a picker anchored to the same session row.
+    for(let frame=0;frame<3;frame++){
+      await act(async()=>document.getElementById('session-label').dispatchEvent(new dom.window.Event('scroll')));
+      assert.ok(document.querySelector('.dpm-color-menu'),'title marquee must not close the session picker');
+    }
+    await act(async()=>document.getElementById('project-label').dispatchEvent(new dom.window.Event('scroll')));
+    assert.ok(document.querySelector('.dpm-color-menu'),'unrelated row animation must not close the picker');
+    await act(async()=>document.querySelector('.dpm-color-menu').dispatchEvent(new dom.window.Event('scroll')));
+    assert.ok(document.querySelector('.dpm-color-menu'),'scrolling a tall color menu must keep it open');
     await key('End');assert.equal(document.activeElement.textContent,'紫色');
     await key('Home');assert.equal(document.activeElement.textContent,'无颜色');
     await key('ArrowDown');assert.equal(document.activeElement.textContent,'红色');
     await key('Escape');assert.equal(document.querySelector('.dpm-color-menu'),null);
     assert.equal(document.activeElement,sidebarButton('session:s1'));
+    // Real anchor-container/page movement must still dismiss the fixed picker.
+    const sidebarViewport=document.createElement('div');
+    await act(async()=>{row('session:s1').before(sidebarViewport);sidebarViewport.append(row('session:s1'));});
+    for(const [source,type]of [[sidebarViewport,'scroll'],[document,'scroll'],[window,'resize']]){
+      await act(async()=>sidebarButton('session:s1').click());
+      assert.ok(document.querySelector('.dpm-color-menu'),'session picker must reopen after dismissal');
+      await act(async()=>source.dispatchEvent(new dom.window.Event(type)));
+      assert.equal(document.querySelector('.dpm-color-menu'),null,`${type} moving the anchor must close the picker`);
+    }
     await act(async()=>sidebarButton('session:s1').click());
     await click('绿色');
     assert.equal(colors['session:s1'],'green');assert.equal(colors['project:p1'],'red');
