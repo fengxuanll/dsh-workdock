@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { access, mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { apply } from '../index.js';
+import { apply } from '../src/index.js';
 
 test('background route reads and saves projects without executing commands or appending chat events',async()=>{
   const root=await mkdtemp(join(tmpdir(),'dpm-background-'));
   const disposers=[];
   let route,state,cwd=root;
   const workspaces=[];
-  const agent={session:{header:{id:'chat',cwd:root},append(){assert.fail('background UI must not append command records');}},
+  const agent={runMaintenance:task=>task(new AbortController().signal),session:{header:{id:'chat',cwd:root},append(){assert.fail('background UI must not append command records');}},
     ctx:{get:()=>({get:()=>cwd,set:async(_agent,path)=>{cwd=path;}})}};
   try{
     const primary=join(root,'primary');await mkdir(primary);
@@ -88,7 +88,7 @@ test('background project management works without a chat and reports partial syn
   const disposers=[];
   let route,state,cwd=root,failSync=true;
   const workspaces=[];
-  const agent={session:{header:{id:'chat',cwd:root}},ctx:{get:()=>({get:()=>cwd,set:async(_agent,path)=>{cwd=path;}})}};
+  const agent={runMaintenance:task=>task(new AbortController().signal),session:{header:{id:'chat',cwd:root}},ctx:{get:()=>({get:()=>cwd,set:async(_agent,path)=>{cwd=path;}})}};
   try {
     const primary=join(root,'primary'),reference=join(root,'reference');
     await mkdir(primary);await mkdir(reference);

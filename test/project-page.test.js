@@ -197,8 +197,15 @@ test('toolbar keeps view, management, add order and supplies missing native add 
 
 test('composer project chip edits the active project without opening the management page',async t=>{
   const h=await harness(t,{activeProjectId:'p10'});
-  const chip=h.button('▱ Project 10');chip.focus();
-  await h.click('▱ Project 10');
+  const chip=document.querySelector('.dpm-dock');chip.focus();
+  assert.equal(chip.textContent,'','project names do not consume status-bar width');
+  assert.ok(chip.querySelector('svg[aria-hidden="true"]'));
+  assert.equal(chip.getAttribute('aria-label'),'Edit project: Project 10');
+  assert.equal(chip.getAttribute('aria-haspopup'),'dialog');
+  assert.equal(chip.title,'Edit project: Project 10\nD:/work/10');
+  assert.equal(h.dom.window.getComputedStyle(chip).width,'24px');
+  assert.equal(h.dom.window.getComputedStyle(chip).height,'24px');
+  await act(async()=>chip.click());
   assert.ok(!chip.parentElement.contains(document.querySelector('[role=dialog]')),'editor renders in shell overlay, outside composer layout');
   assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Edit project');
   assert.equal(document.getElementById('dpm-name').value,'Project 10');
@@ -206,14 +213,17 @@ test('composer project chip edits the active project without opening the managem
   assert.equal(document.querySelector('.dpm-page'),null);assert.deepEqual(h.selections,[]);
   await h.click('Cancel');assert.equal(document.querySelector('[role=dialog]'),null);
   assert.equal(document.activeElement,chip,'closing global editor restores chip focus');
-  await h.click('▱ Project 10');await h.input(document.getElementById('dpm-name'),'Renamed active');await h.click('Save');
+  await act(async()=>chip.click());await h.input(document.getElementById('dpm-name'),'Renamed active');await h.click('Save');
   assert.ok(h.requests.some(r=>r.args.action==='save'&&r.args.id==='p10'&&r.sessionId==='s'));
   assert.equal(document.querySelector('[role=dialog]'),null);assert.deepEqual(h.selections,[]);
 });
 
 test('composer chip without an associated project opens a blank add form, never the list',async t=>{
   const h=await harness(t);
-  await h.click('▱ Projects');assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Add project');
+  const chip=document.querySelector('.dpm-dock');
+  assert.equal(chip.textContent,'');assert.ok(chip.querySelector('svg'));
+  assert.equal(chip.title,'Add project');assert.equal(chip.getAttribute('aria-label'),'Add project');
+  await act(async()=>chip.click());assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Add project');
   assert.equal(document.getElementById('dpm-name').value,'');assert.equal(document.querySelector('.dpm-page'),null);
   assert.deepEqual(h.selections,[]);await h.click('Cancel');
 });

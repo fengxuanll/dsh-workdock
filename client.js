@@ -23,6 +23,7 @@ window.__ModuleLoader__.load({
 .dpm-edit .dpm-head button{font-size:16px;padding:0 5px;line-height:20px}
 .dpm button{border-radius:8px;padding:4px 9px;font-size:13px;line-height:18px}
 .dpm .dpm-mini{padding:4px 8px;font-size:12px;line-height:16px}
+.dpm .dpm-dock{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:none;width:24px;height:24px;padding:3px;border:0;border-radius:5px;color:var(--dsw-alias-label-secondary,#aaa);vertical-align:middle}.dpm-dock svg{width:16px;height:16px;pointer-events:none}.dpm .dpm-dock:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}
 .dpm input{border-radius:8px;padding:7px 9px;font-size:13px}
 .dpm select{padding:6px 8px;border-radius:8px;font-size:13px}
 .dpm label.dpm-label{display:block;margin:10px 0 6px;font-size:12px;opacity:.72}
@@ -91,15 +92,18 @@ window.__ModuleLoader__.load({
 .dpm-turn-placeholder{margin-block:0!important;padding-block:0!important}.dpm-turn-restore{display:flex;align-items:center;gap:8px;min-height:22px;padding:0;margin:0;color:var(--dsw-alias-label-secondary,#aaa);font-size:12px;line-height:22px}.dpm-turn-restore button,.dpm-turn-action{font:inherit;color:var(--dsw-alias-label-secondary,#aaa);background:transparent;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px}.dpm-turn-restore button:hover,.dpm-turn-action:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-turn-restore button:focus-visible,.dpm-turn-action:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}
 .dpm-turn-restore button{padding:0 4px;line-height:22px}.dpm-turn-action-seat{display:inline-flex;align-items:center;flex:none}.dpm-turn-hide-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:4px;flex:none}.dpm-turn-hide-button:disabled{opacity:.4;cursor:default}.dpm-turn-restore-all{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;padding:4px;flex:none;vertical-align:middle}
 `;
-    const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss;
+    const directoryCss = `
+.dpm-directory-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;padding:3px;border:0;border-radius:5px;background:transparent;color:var(--dsw-alias-label-secondary,#aaa);cursor:pointer;vertical-align:middle;flex:none}.dpm-directory-button .dpm-folder-icon{width:16px;height:16px;opacity:1}.dpm-directory-button[data-override=true]{color:var(--dsw-alias-state-business-primary,#8bb6ed)}.dpm-directory-button:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-directory-button:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-directory-button:disabled{opacity:.4;cursor:default}.dpm-directory-mode{display:flex;align-items:center;gap:9px;margin:12px 0;cursor:pointer}.dpm .dpm-directory-mode input{width:auto;margin:0;accent-color:var(--dsw-alias-state-business-primary,#8bb6ed)}.dpm-directory-summary{padding:10px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#444);font-size:12px}.dpm-directory-path{display:block;overflow-wrap:anywhere;margin:6px 0;line-height:1.5}.dpm .dpm-directory-folders{width:100%;max-width:100%;margin:0 0 8px}.dpm-directory-selected{font-size:12px;overflow-wrap:anywhere;line-height:1.6}.dpm .dpm-directory-note{margin:12px 0 0;line-height:1.6}.dpm .dpm-directory-restore{margin-right:auto}.dpm .dpm-directory-policy{display:grid;gap:8px;margin-top:14px;font-size:12px}.dpm-directory-policy select{max-width:100%}
+`;
+    const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss + directoryCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{more:'更多…',treeOrderUnavailable:'当前宿主不支持项目排序，请升级 Harness。',treeProjectUnavailable:'项目已不存在，请刷新后重试。',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
     Object.assign(en,{more:'More…',treeOrderUnavailable:'This host does not support workspace ordering. Update Harness.',treeProjectUnavailable:'This project no longer exists. Refresh and try again.',nativeUnavailable:'The host project menu is unavailable. Use the project row menu button.',removeTreeConfirm:'Remove this project and its directory settings from the sidebar? Files and chat history will be kept.'});
     Object.assign(zh,{manage:'项目管理',openFolder:'在资源管理器中打开',rename:'重命名',deleteWorkspace:'删除工作区'});
     Object.assign(en,{manage:'Project management',openFolder:'Open folder in file manager',rename:'Rename',deleteWorkspace:'Delete workspace'});
-    Object.assign(zh,{setPrimaryButton:'设为主要目录',saveNote:'保存后，当前聊天及后续操作将使用主要目录。'});
-    Object.assign(en,{setPrimaryButton:'Set as primary',saveNote:'Saving applies the primary directory to this chat and subsequent work.'});
+    Object.assign(zh,{setPrimaryButton:'设为主要目录',saveNote:'保存后关联当前聊天；会话专属目录优先于项目主要目录。'});
+    Object.assign(en,{setPrimaryButton:'Set as primary',saveNote:'Saving associates this chat with the project. A session directory takes priority over the project primary.'});
     Object.assign(en,{discard:'Discard unsaved changes?',search:'Search projects',noResults:'No matching projects.',sort:'Sort projects',orderName:'Name',orderRecent:'Recently used',copy:'Copy primary path',copied:'Path copied',clipboardUnavailable:'Clipboard is unavailable.',undo:'Undo',removedFolder:'Folder removed',bound:'Project applied',syncWarning:'Sidebar sync needs attention',retrySync:'Retry sidebar sync'});
     Object.assign(zh,{discard:'放弃未保存的修改？',search:'搜索项目',noResults:'没有匹配的项目。',sort:'项目排序',orderName:'名称',orderRecent:'最近使用',copy:'复制主要目录路径',copied:'已复制路径',clipboardUnavailable:'剪贴板不可用。',undo:'撤销',removedFolder:'已移除目录',bound:'已应用项目',syncWarning:'侧边栏同步需要重试',retrySync:'重试侧边栏同步'});
     Object.assign(zh,{needSession:'请先打开或创建一个聊天，再添加、编辑或切换项目。'});
@@ -110,6 +114,8 @@ window.__ModuleLoader__.load({
     Object.assign(en,{colorLabel:'Color label',colorNone:'No color',colorSaved:'Color label updated',colorCustom:'Custom color',colorPicker:'Choose custom color',colorHex:'HEX color',colorHexHint:'Format: #RRGGBB, e.g. #FF8800',colorApply:'Apply',red:'Red',orange:'Orange',yellow:'Yellow',green:'Green',blue:'Blue',purple:'Purple'});
     Object.assign(zh,{hideTurn:'隐藏本轮',hiddenTurn:'本轮对话已隐藏',restoreTurn:'恢复显示',restoreTurns:'恢复全部隐藏轮次',hideTurnNote:'仅在当前浏览器隐藏；原始历史和模型上下文不变，不减少上下文用量。',hideStorageError:'无法保存隐藏状态，请检查浏览器本地存储权限。'});
     Object.assign(en,{hideTurn:'Hide turn',hiddenTurn:'This turn is hidden',restoreTurn:'Show turn',restoreTurns:'Show all hidden turns',hideTurnNote:'Hidden only in this browser. History and model context are unchanged; context usage is not reduced.',hideStorageError:'Cannot save hidden turns. Check browser local storage permissions.'});
+    Object.assign(zh,{sessionDirectory:'会话工作目录',setSessionDirectory:'设置工作目录…',directoryFollow:'跟随项目目录',directoryCustom:'会话专属目录',directoryInitial:'会话初始目录',directoryCurrent:'当前生效目录',directoryChoose:'选择其他目录…',directoryPick:'选择会话工作目录',directorySaved:'会话工作目录已更新，对后续操作生效',directoryNote:'仅影响当前会话后续操作；其他会话、项目主要目录及已运行进程不变。选择其他目录不会自动获得额外访问权限。',directoryOutside:'该目录不在项目源目录中；实际访问仍受 Harness 权限和沙箱策略限制。',directoryLoading:'正在读取工作目录…',directoryRestore:'恢复跟随项目',directorySwitch:'切换项目时如何处理会话专属目录？',directoryKeep:'保留会话专属目录',directoryPolicy:'请选择处理方式',directoryRetry:'重新读取目录',directorySource:'来源'});
+    Object.assign(en,{sessionDirectory:'Session working directory',setSessionDirectory:'Set working directory…',directoryFollow:'Follow project directory',directoryCustom:'Session-specific directory',directoryInitial:'Initial session directory',directoryCurrent:'Effective directory',directoryChoose:'Choose another directory…',directoryPick:'Choose session working directory',directorySaved:'Session working directory updated for subsequent work',directoryNote:'Only subsequent work in this session changes. Other sessions, the project primary and running processes are unchanged. Choosing a directory does not grant additional access.',directoryOutside:'This directory is outside the project folders. Harness permissions and sandbox rules still apply.',directoryLoading:'Loading working directory…',directoryRestore:'Follow project again',directorySwitch:'How should the session directory change with this project?',directoryKeep:'Keep session-specific directory',directoryPolicy:'Choose how to proceed',directoryRetry:'Reload directory',directorySource:'Source'});
     function folderLabel(path, folders) {
       const parts = path.replace(/[\\/]+$/,'').split(/[\\/]/);
       for(let n=1;n<=parts.length;n++) {
@@ -125,7 +131,7 @@ window.__ModuleLoader__.load({
         add&&h('path',{d:'M18 15v7m-3.5-3.5h7'}));
     }
     return {
-      inject: ['slots', 'layout', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale'],
+      inject: ['slots', 'layout', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale', 'contextMenus'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register('dsh-workdock', { zh, en }));
         const t = ctx.locale.bind('dsh-workdock');
@@ -474,7 +480,20 @@ window.__ModuleLoader__.load({
             publishTree(null);
           };
         });
+        const directoryCache=new Map(),directoryEpochs=new Map(),directoryListeners=new Set();
+        let directoryVersion=0,directoryRequest=null;
+        const directorySource={subscribe(fn){directoryListeners.add(fn);return()=>directoryListeners.delete(fn);},getSnapshot:()=>directoryVersion};
+        function publishDirectory(){directoryVersion++;for(const fn of directoryListeners)fn();}
+        function openSessionDirectory(sessionId,trigger){
+          if(!sessionId)return;
+          const sessions=ctx.sessions.list.getSnapshot().byId;
+          if(!(sessions[sessionId]?.retainedBy?.mainView>0))ctx.uiWorkspace.openSession(sessionId);
+          directoryRequest={sessionId,trigger};publishDirectory();
+        }
         async function call(sessionId, args) {
+          const directoryRead=sessionId&&['list','get_session_directory','set_session_directory'].includes(args.action);
+          const directoryEpoch=directoryRead?(directoryEpochs.get(sessionId)||0)+1:0;
+          if(directoryRead)directoryEpochs.set(sessionId,directoryEpoch);
           // Resolve relative to the page so Desktop's dsh-app protocol forwarding
           // and web deployments under a reverse-proxy directory both work.
           const base=new URL(document.baseURI);base.search='';base.hash='';
@@ -486,6 +505,10 @@ window.__ModuleLoader__.load({
           const result=await response.json();
           if(!response.ok||!result.ok)throw new Error(result.error||t('conflict'));
           const value=result.value;
+          if(sessionId&&value.sessionDirectory&&(directoryEpochs.get(sessionId)===directoryEpoch||args.action==='set_session_directory')){
+            if(args.action==='set_session_directory')directoryEpochs.set(sessionId,(directoryEpochs.get(sessionId)||0)+1);
+            directoryCache.set(sessionId,value.sessionDirectory);publishDirectory();
+          }
           if(['list','save','bind'].includes(args.action))updateWarnings(value.syncWarnings||[]);
           if(args.action==='list')projectCache=value.projects;
           if(args.action==='list'||args.action==='set_color') {colorCache=value.colors||{};colorVersion++;for(const fn of colorListeners)fn();}
@@ -496,6 +519,99 @@ window.__ModuleLoader__.load({
           refreshNativeCards();
           if(hover){const project=matchingProject(hover.workspace);publishHover(project?{...hover,project}:null);}
           return value;
+        }
+        function SessionDirectoryButton({sessionId}){
+          useSyncExternalStore(directorySource.subscribe,directorySource.getSnapshot);
+          const version=useSyncExternalStore(projectSource.subscribe,projectSource.getSnapshot);
+          const [error,setError]=useState('');
+          useEffect(()=>{
+            let alive=true;
+            const refresh=()=>{if(sessionId)call(sessionId,{action:'get_session_directory'}).then(()=>{if(alive)setError('');}).catch(e=>{if(alive)setError(e.message);});};
+            refresh();window.addEventListener('focus',refresh);
+            return()=>{alive=false;window.removeEventListener('focus',refresh);};
+          },[sessionId,version]);
+          const info=directoryCache.get(sessionId),source=info?.source==='session'?'directoryCustom':info?.source==='project'?'directoryFollow':'directoryInitial';
+          const title=t('sessionDirectory')+'\n'+(error||info?.validationError||(!info?t('directoryLoading'):(info.effectivePath||'—')+'\n'+t('directorySource')+': '+t(source)));
+          return h('button',{type:'button',className:'dpm-directory-button',disabled:!sessionId,title,'aria-label':t('sessionDirectory'),'aria-haspopup':'dialog','data-override':info?.source==='session',onClick:e=>openSessionDirectory(sessionId,e.currentTarget)},h(FolderIcon));
+        }
+        function SessionDirectoryOverlay(){
+          useSyncExternalStore(directorySource.subscribe,directorySource.getSnapshot);
+          const request=directoryRequest,dialog=useRef(null),current=useRef(request),lock=useRef(false);current.current=request;
+          const [info,setInfo]=useState(null),[path,setPath]=useState(null),[mode,setMode]=useState('follow'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false);
+          const dirty=Boolean(info)&&((mode==='custom'?path:null)!==info.path);
+          const close=(force=false)=>{
+            if(lock.current)return;
+            if(!force&&dirty&&!window.confirm(t('discard')))return;
+            directoryRequest=null;publishDirectory();request?.trigger?.focus({preventScroll:true});
+          };
+          async function load(target=request){
+            if(!target||lock.current)return;
+            lock.current=true;setLoading(true);setError('');
+            try{
+              const value=await call(target.sessionId,{action:'get_session_directory'});
+              if(current.current!==target)return;
+              if(!value.sessionDirectory)throw new Error(t('needSession'));
+              setInfo(value.sessionDirectory);setPath(value.sessionDirectory.path);setMode(value.sessionDirectory.path?'custom':'follow');setError(value.sessionDirectory.validationError||'');
+            }catch(e){if(current.current===target)setError(e.message);}
+            finally{if(current.current===target){lock.current=false;setLoading(false);}}
+          }
+          useEffect(()=>{
+            current.current=request;setInfo(null);setPath(null);setMode('follow');setError('');setBusy(false);setLoading(false);lock.current=false;
+            if(request){load(request);dialog.current?.focus();}
+            return()=>{current.current=null;};
+          },[request]);
+          useEffect(()=>{
+            if(!request||!dirty)return;
+            const unload=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',unload);return()=>window.removeEventListener('beforeunload',unload);
+          },[request,dirty]);
+          async function pick(){
+            if(lock.current)return;
+            const target=request;lock.current=true;setBusy(true);setError('');
+            try{const response=await ctx.remote.directoryPicker.pick();if(!response.ok)throw new Error(response.error.message);if(current.current===target&&response.value?.trim()){setPath(response.value.trim());setMode('custom');}}
+            catch(e){if(current.current===target)setError(e.message);}
+            finally{if(current.current===target){lock.current=false;setBusy(false);}}
+          }
+          async function save(follow=false){
+            if(lock.current||!info||(!follow&&mode==='custom'&&!path))return;
+            const target=request;lock.current=true;setBusy(true);setError('');
+            try{
+              await call(target.sessionId,{action:'set_session_directory',path:follow||mode==='follow'?null:path,directoryRevision:info.revision});
+              if(current.current===target){lock.current=false;close(true);announce(t('directorySaved'));}
+            }catch(e){if(current.current===target)setError(e.message);}
+            finally{if(current.current===target){lock.current=false;setBusy(false);}}
+          }
+          function keyboard(e){
+            if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}
+            if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();if(dirty)save();}
+            if(e.key==='Tab'){
+              const nodes=[...dialog.current.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled)')];
+              if(!nodes.length){e.preventDefault();return;}
+              const first=nodes[0],last=nodes[nodes.length-1];
+              if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog.current)){e.preventDefault();last.focus();}
+              else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog.current)){e.preventDefault();first.focus();}
+            }
+          }
+          if(!request)return null;
+          const disabled=busy||loading,folders=info?.folders||[];
+          const button=(label,onClick,props={})=>h('button',{type:'button',disabled,onClick,...props},label);
+          return h('div',{className:'dpm'},h('style',null,css),h('div',{className:'dpm-backdrop',onClick:e=>{if(e.target===e.currentTarget)close();}},h('section',{className:'dpm-dialog dpm-edit',ref:dialog,role:'dialog','aria-modal':true,'aria-label':t('sessionDirectory'),'aria-busy':disabled,tabIndex:-1,onKeyDown:keyboard},
+            h('div',{className:'dpm-head'},h('h2',null,t('sessionDirectory')),button('×',()=>close(),{'aria-label':t('close')})),
+            loading&&h('p',{role:'status'},t('directoryLoading')),
+            info&&h(React.Fragment,null,
+              h('div',{className:'dpm-directory-summary'},t('directoryCurrent'),h('strong',{className:'dpm-directory-path'},info.effectivePath||'—'),t('directorySource')+': '+t(info.source==='session'?'directoryCustom':info.source==='project'?'directoryFollow':'directoryInitial')),
+              h('label',{className:'dpm-directory-mode'},h('input',{type:'radio',name:'dpm-directory-mode',value:'follow',checked:mode==='follow',disabled,onChange:()=>setMode('follow')}),t('directoryFollow')),
+              h('div',{className:'dpm-path'},info.projectPrimary||t('directoryInitial')),
+              h('label',{className:'dpm-directory-mode'},h('input',{type:'radio',name:'dpm-directory-mode',value:'custom',checked:mode==='custom',disabled,onChange:()=>{setMode('custom');if(!path)setPath(info.effectivePath||folders[0]||null);}}),t('directoryCustom')),
+              mode==='custom'&&h('div',null,
+                folders.length>0&&h('select',{className:'dpm-directory-folders','aria-label':t('directoryCustom'),disabled,value:folders.includes(path)?path:'',onChange:e=>setPath(e.target.value||null)},h('option',{value:'',disabled:true},t('directoryChoose')),folders.map(folder=>h('option',{key:folder,value:folder},folder))),
+                h('div',{className:'dpm-directory-selected'},path||t('directoryPick')),button(t('directoryChoose'),pick),
+                path&&!folders.includes(path)&&h('p',{className:'dpm-directory-note'},t('directoryOutside'))),
+              h('p',{className:'dpm-directory-note'},t('directoryNote'))),
+            error&&h('div',{className:'dpm-error',role:'alert'},error),
+            h('div',{className:'dpm-foot'},
+              info?.path&&button(t('directoryRestore'),()=>save(true),{className:'dpm-directory-restore'}),
+              error&&button(t('directoryRetry'),()=>load()),button(t('cancel'),()=>close(),{className:'dpm-cancel'}),
+              button(t('save'),()=>save(),{className:'dpm-save',disabled:disabled||!info||!dirty||(mode==='custom'&&!path)})))));
         }
         const PAGE_ID = 'dsh-workdock-projects';
         // This is a native main-panel switch: the sidebar and existing chat stay
@@ -603,6 +719,7 @@ window.__ModuleLoader__.load({
           const [pageNumber,setPageNumber]=useState(1), [pageSize,setPageSize]=useState(()=>{try {const size=Number(localStorage.getItem('dsh-workdock-page-size'));return [10,25,50,100].includes(size)?size:25;}catch{return 25;}});
           const [loading,setLoading]=useState(true);
           const [directoryWarnings,setDirectoryWarnings]=useState([]), [removed,setRemoved]=useState(null);
+          const [directoryPolicy,setDirectoryPolicy]=useState('');
           const dialog=useRef(null), nameInput=useRef(null), generation=useRef(0), lock=useRef(false), checkGeneration=useRef(0);
           const baseline=useRef(JSON.stringify(initialProject)), manualName=useRef(Boolean(initialProject?.title)), undoTimer=useRef(null), draftEpoch=useRef(0);
           const currentId=useRef(sessionId);currentId.current=sessionId;
@@ -653,7 +770,7 @@ window.__ModuleLoader__.load({
             if(!sessionId){setError(t('needSession'));return;}
             clearUndo();draftEpoch.current++;checkGeneration.current++;
             const next=p?structuredClone(p):{title:'',folders:[],primary:''};
-            baseline.current=JSON.stringify(next);manualName.current=Boolean(p?.title);setDraft(next);setError('');
+            baseline.current=JSON.stringify(next);manualName.current=Boolean(p?.title);setDraft(next);setDirectoryPolicy('');setError('');
             setDirectoryWarnings((state.directoryWarnings||[]).filter(w=>w.projectId===p?.id));
           }
           async function checkPaths(folders){
@@ -692,8 +809,9 @@ window.__ModuleLoader__.load({
               return {...d,folders,primary:item.wasPrimary&&!d.primary?item.folder:d.primary};
             });
           }
-          const valid=Boolean(sessionId&&draft?.title.trim()&&draft.primary&&draft.folders.includes(draft.primary));
-          async function save(){if(!valid||lock.current)return;if(await action({action:'save',...draft}))close(true);}
+          const needsDirectoryPolicy=Boolean(state.sessionDirectory?.path&&draft&&draft.id!==state.activeProjectId);
+          const valid=Boolean(sessionId&&draft?.title.trim()&&draft.primary&&draft.folders.includes(draft.primary)&&(!needsDirectoryPolicy||directoryPolicy));
+          async function save(){if(!valid||lock.current)return;if(await action({action:'save',...draft,...(needsDirectoryPolicy?{directoryPolicy,directoryRevision:state.sessionDirectory.revision}:{})}))close(true);}
           async function newChat(p){
             if(lock.current)return;lock.current=true;setBusy(true);setError('');
             try {await call(undefined,{action:'touch',id:p.id});const workspace=await ctx.workspaces.create({path:p.primary});await openNewSession(workspace.workspaceId,()=>close(true));}
@@ -723,7 +841,7 @@ window.__ModuleLoader__.load({
           const warnings=(items,projectId)=>items.filter(w=>!projectId||w.projectId===projectId).map(w=>h('div',{key:w.path,className:'dpm-error',role:'status'},w.path+': '+w.error));
           const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('colorLabel'),e=>openColor({target:'project',id:p.id},e.currentTarget)),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
           return h('div',{className:page?'dpm dpm-page':'dpm'},h('style',null,css),
-            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock dpm-mini':'dpm-launch',onClick:dock?()=>publishTree({manage:true,project:active?structuredClone(active):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence}):openProjects,disabled:dock&&(loading||busy||!sessionId),title:dock?t(active?'edit':'add'):active?.primary},'▱ '+(dock&&active?active.title:t('title'))),
+            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock':'dpm-launch',onClick:dock?()=>publishTree({manage:true,project:active?structuredClone(active):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence}):openProjects,disabled:dock&&(loading||busy||!sessionId),title:dock?(active?t('edit')+': '+active.title+'\n'+active.primary:t('add')):active?.primary,'aria-label':dock?(active?t('edit')+': '+active.title:t('add')):undefined,'aria-haspopup':dock?'dialog':undefined},dock?h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinejoin:'round',strokeLinecap:'round','aria-hidden':true},h('path',{d:'m12 3-9 5 9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5'})):'▱ '+t('title')),
             page&&h('section',{className:'dpm-page-content',ref:draft?undefined:dialog,tabIndex:-1,'aria-label':t('title'),inert:draft?'':undefined},
               h('header',{className:'dpm-page-header'},h('div',null,h('h1',null,t('title')),h('p',null,t('pageHint')+' · '+t('projectCount')+': '+state.projects.length)),button(t('backToChat'),()=>close())),
               h('div',{className:'dpm-page-toolbar'},h('input',{value:search,type:'search',placeholder:t('search'),'aria-label':t('search'),onChange:e=>{setSearch(e.target.value);setPageNumber(1);}}),
@@ -755,6 +873,7 @@ window.__ModuleLoader__.load({
                     warnings(directoryWarnings.filter(w=>w.path===folder)))),
                     button(h(React.Fragment,null,h(FolderIcon,{add:true}),h('span',null,t('addFolder'))),()=>pick(),{className:'dpm-folder-add',disabled:busy||!sessionId})),
                   removed&&h('div',{className:'dpm-removed-folder',role:'status'},t('removedFolder')+': '+removed.folder+' ',button(t('undo'),undo,{className:'dpm-undo'})),
+                  needsDirectoryPolicy&&h('label',{className:'dpm-directory-policy'},t('directorySwitch'),h('select',{'aria-label':t('directorySwitch'),value:directoryPolicy,disabled:busy,onChange:e=>setDirectoryPolicy(e.target.value)},h('option',{value:''},t('directoryPolicy')),h('option',{value:'keep'},t('directoryKeep')),h('option',{value:'follow'},t('directoryRestore')))),
                   h('p',{className:'dpm-edit-note',title:t('note')},t('saveNote')),
                   h('div',{className:'dpm-foot'},draft.id&&button(t('remove'),async()=>{if(window.confirm(t('removeConfirm'))&&await action({action:'remove',id:draft.id}))close(true);},{className:'dpm-danger'}),button(t('cancel'),()=>close(),{className:'dpm-cancel'}),button(t('save'),save,{className:'dpm-save',disabled:busy||!valid}))),
                 error&&h('div',{className:'dpm-error',role:'alert'},error))));
@@ -955,6 +1074,13 @@ window.__ModuleLoader__.load({
           observer.observe(document.body,{childList:true,subtree:true,characterData:true});sync();
           return()=>{observer.disconnect();for(const [host,button] of mounted){host.classList.remove('dpm-workspace-actions');button.removeEventListener('click',openProjects);button.remove();}mounted.clear();for(const button of addButtons.values()){button.removeEventListener('click',openAddProject);button.remove();}addButtons.clear();style.remove();};
         });
+        // Official additive menu contribution: keep rename, fork and archive intact.
+        if(ctx.contextMenus)ctx.effect(()=>ctx.contextMenus.register({
+          id:'dsh-workdock.set-working-directory',target:'session',order:250,observe:()=>[ctx.locale],
+          resolve:({sessionId})=>[{id:'set-working-directory',label:t('setSessionDirectory'),separatorBefore:true,run:()=>openSessionDirectory(sessionId)}],
+        }));
+        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-session-directory',order:10.5,inject:sessionId=>({sessionId})}, SessionDirectoryButton));
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-session-directory-dialog',order:24}, SessionDirectoryOverlay));
         ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({name:'conversation.chat.turnTail',id:'dsh-workdock-hide-turn',order:90}, HideTurn));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-restore-turns',order:11,inject:sessionId=>({sessionId})}, RestoreHiddenTurns));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));

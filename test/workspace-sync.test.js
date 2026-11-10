@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apply } from '../index.js';
+import { apply } from '../src/index.js';
 
 test('activation backfills legacy projects and list retries sync failures without duplicate workspaces',async()=>{
   const legacy={id:'legacy',title:'Qizhu',primary:'D:/Qizhu/v1',folders:['D:/Qizhu/v1'],sessionRoots:['D:/Qizhu/v1'],revision:1,pinned:false};

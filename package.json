@@ -1,6 +1,6 @@
 {
   "name": "dsh-workdock",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "多目录项目管理与主要工作目录绑定",
   "type": "module",
   "license": "MIT",
@@ -39,6 +39,7 @@
         "@deepseek-ai/dsh-client-ui-sidebar",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-context-menu",
         "@deepseek-ai/dsh-api-session-controller",
         "@deepseek-ai/dsh-api-workspace-controller",
         "@deepseek-ai/dsh-client-ui-workspace",

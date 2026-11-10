@@ -21,9 +21,9 @@ test('the API no longer accepts retired local file actions and still lists proje
   });
   try {
     assert.equal(route.path, '/api/dsh-workdock');
-    const request = async args => {
+    const request = async (args, sessionId) => {
       const response = await route.fetch(new Request('http://localhost/api/dsh-workdock', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'not-an-active-agent', args }),
+        method: 'POST', body: JSON.stringify({ sessionId, args }),
       }));
       return { status: response.status, body: await response.json() };
     };
@@ -33,6 +33,8 @@ test('the API no longer accepts retired local file actions and still lists proje
       assert.equal(rejected.body.ok, false);
       assert.equal(rejected.body.error, '项目管理请求参数无效');
     }
+    const stale = await request({ action: 'list' }, 'not-an-active-agent');
+    assert.equal(stale.status, 409, 'an explicit stale session must not silently become a background request');
     const existing = await request({ action: 'list' });
     assert.equal(existing.status, 200);
     assert.deepEqual(existing.body.value.projects, []);

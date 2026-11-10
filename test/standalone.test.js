@@ -28,9 +28,12 @@ test('release entry activates outside the workspace without node_modules or Harn
       effect: fn => disposers.push(fn()),
     });
     assert.equal(tools[0].parameters.type, 'object');
+    assert.ok(tools[0].parameters.properties.action.enum.includes('get_session_directory'));
+    assert.ok(tools[0].parameters.properties.action.enum.includes('set_session_directory'));
+    assert.deepEqual(tools[0].parameters.properties.path.oneOf, [{ type: 'string' }, { type: 'null' }]);
     assert.equal(commands[0].name, 'projects');
     assert.equal(contexts.length, 1);
-    assert.equal(hooks.length, 2);
+    assert.deepEqual(hooks.map(([name]) => name), ['agent/created', 'system-prompt/assemble', 'tools/execute']);
     const result = await commands[0].handler({ rawInput: '', agent: { session: { header: { id: 'standalone' } } } });
     assert.equal(result.kind, 'success');
     assert.deepEqual(JSON.parse(result.text).projects, []);
