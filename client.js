@@ -717,7 +717,8 @@ window.__ModuleLoader__.load({
           const [draft,setDraft]=useState(initialProject), [error,setError]=useState(''), [busy,setBusy]=useState(false);
           const [search,setSearch]=useState(''), [sort,setSort]=useState(()=>{try {return localStorage.getItem('dsh-workdock-sort')||'name';}catch{return 'name';}});
           const [pageNumber,setPageNumber]=useState(1), [pageSize,setPageSize]=useState(()=>{try {const size=Number(localStorage.getItem('dsh-workdock-page-size'));return [10,25,50,100].includes(size)?size:25;}catch{return 25;}});
-          const [loading,setLoading]=useState(true);
+          const [loading,setLoading]=useState(true), [launching,setLaunching]=useState(false);
+          const launcher=useRef(null);
           const [directoryWarnings,setDirectoryWarnings]=useState([]), [removed,setRemoved]=useState(null);
           const [directoryPolicy,setDirectoryPolicy]=useState('');
           const dialog=useRef(null), nameInput=useRef(null), generation=useRef(0), lock=useRef(false), checkGeneration=useRef(0);
@@ -739,6 +740,26 @@ window.__ModuleLoader__.load({
             } finally {if(token===generation.current&&id===currentId.current)setLoading(false);}
           }
           useEffect(()=>{refresh().catch(e=>setError(e.message));return()=>{generation.current++;};},[sessionId,open,version]);
+          useEffect(()=>{setLaunching(false);return()=>{launcher.current=null;};},[sessionId]);
+          async function openCurrentProject(){
+            if(!sessionId||launcher.current)return;
+            const request={sessionId};launcher.current=request;setLaunching(true);setError('');
+            const token=++generation.current;
+            try {
+              // Cached state may belong to an earlier session or a failed load.
+              // Only a fresh successful lookup may decide between edit and add.
+              const value=await call(sessionId,{action:'list'});
+              if(launcher.current!==request||currentId.current!==sessionId)return;
+              const project=value.projects.find(p=>p.id===value.activeProjectId);
+              if(value.activeProjectId&&!project)throw new Error(t('conflict'));
+              if(token===generation.current){setState(value);setLoading(false);}
+              publishTree({manage:true,project:project?structuredClone(project):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence});
+            } catch(e) {
+              if(launcher.current===request&&currentId.current===sessionId){setError(e.message);announce(e.message,true);}
+            } finally {
+              if(launcher.current===request){launcher.current=null;setLaunching(false);if(token===generation.current)setLoading(false);}
+            }
+          }
           function close(force=false){
             if(!force&&dirty&&!window.confirm(t('discard')))return;
             clearUndo();checkGeneration.current++;draftEpoch.current++;setDraft(null);setError('');
@@ -841,7 +862,7 @@ window.__ModuleLoader__.load({
           const warnings=(items,projectId)=>items.filter(w=>!projectId||w.projectId===projectId).map(w=>h('div',{key:w.path,className:'dpm-error',role:'status'},w.path+': '+w.error));
           const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('colorLabel'),e=>openColor({target:'project',id:p.id},e.currentTarget)),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
           return h('div',{className:page?'dpm dpm-page':'dpm'},h('style',null,css),
-            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock':'dpm-launch',onClick:dock?()=>publishTree({manage:true,project:active?structuredClone(active):{title:'',folders:[],primary:''},sessionId,sequence:++requestSequence}):openProjects,disabled:dock&&(loading||busy||!sessionId),title:dock?(active?t('edit')+': '+active.title+'\n'+active.primary:t('add')):active?.primary,'aria-label':dock?(active?t('edit')+': '+active.title:t('add')):undefined,'aria-haspopup':dock?'dialog':undefined},dock?h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinejoin:'round',strokeLinecap:'round','aria-hidden':true},h('path',{d:'m12 3-9 5 9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5'})):'▱ '+t('title')),
+            !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock':'dpm-launch',onClick:dock?openCurrentProject:openProjects,disabled:dock&&(loading||busy||launching||!sessionId),title:dock?(active?t('edit')+': '+active.title+'\n'+active.primary:t('add')):active?.primary,'aria-label':dock?(active?t('edit')+': '+active.title:t('add')):undefined,'aria-haspopup':dock?'dialog':undefined},dock?h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinejoin:'round',strokeLinecap:'round','aria-hidden':true},h('path',{d:'m12 3-9 5 9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5'})):'▱ '+t('title')),
             page&&h('section',{className:'dpm-page-content',ref:draft?undefined:dialog,tabIndex:-1,'aria-label':t('title'),inert:draft?'':undefined},
               h('header',{className:'dpm-page-header'},h('div',null,h('h1',null,t('title')),h('p',null,t('pageHint')+' · '+t('projectCount')+': '+state.projects.length)),button(t('backToChat'),()=>close())),
               h('div',{className:'dpm-page-toolbar'},h('input',{value:search,type:'search',placeholder:t('search'),'aria-label':t('search'),onChange:e=>{setSearch(e.target.value);setPageNumber(1);}}),

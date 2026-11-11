@@ -20,10 +20,10 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
   const {createRoot}=await import('react-dom/client');
   const root=createRoot(document.getElementById('root'));
   const entries=new Map(),registrations=[],disposers=[],requests=[],selections=[],created=[],workspaceCalls=[],started=[],opened=[],events=[];
-  let selected=null,dictionary,fail=null,createGate;
+  let selected=null,dictionary,fail=null,createGate,listGate,activeSessionId=session?'s':undefined;
   const snapshot={byId:session?{s:{id:'s',retainedBy:{mainView:1}}}:{}};
   const render=()=>root.render(React.createElement(React.Fragment,null,
-    React.createElement(entries.get('conversation.composer.dock:dsh-workdock-dock'),{dock:true,sessionId:session?'s':undefined}),
+    React.createElement(entries.get('conversation.composer.dock:dsh-workdock-dock'),{dock:true,sessionId:activeSessionId}),
     selected&&React.createElement(entries.get(`main:${selected}`)),
     React.createElement(entries.get('shell.overlay:dsh-workdock-tree-menu')),
     React.createElement(entries.get('shell.overlay:dsh-workdock-experience'))));
@@ -41,7 +41,10 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
     const request=JSON.parse(options.body);requests.push(request);const {args}=request;
     if(args.action===fail)return {ok:false,json:async()=>({ok:false,error:'Injected failure'})};
     let value={};
-    if(args.action==='list')value={projects,activeProjectId,directoryWarnings:[]};
+    if(args.action==='list'){
+      value={projects,activeProjectId,directoryWarnings:[]};
+      const gate=listGate;listGate=null;if(gate)await gate;
+    }
     if(args.action==='check_directories')value={directoryWarnings:[]};
     if(args.action==='save'){const project={...args};projects=projects.map(p=>p.id===args.id?project:p);value={project};}
     if(args.action==='remove')projects=projects.filter(p=>p.id!==args.id);
@@ -62,7 +65,10 @@ async function harness(t,{storage={},projects=fixtures(),session=true,activeProj
   const status=()=>document.querySelector('.dpm-pagination [role=status]').textContent;
   const open=async()=>act(async()=>ctx.layout.selectPanel(PAGE));
   return {dom,ctx,registrations,requests,selections,created,workspaceCalls,started,opened,events,button,click,change,input,search,rows,ids,status,open,
-    setProjects(value){projects=value;},setFailure(value){fail=value;},setCreateGate(value){createGate=value;},dispose(){for(const fn of disposers.splice(0))fn?.();}};
+    setProjects(value){projects=value;},setFailure(value){fail=value;},setCreateGate(value){createGate=value;},
+    setActiveProject(value){activeProjectId=value;},setListGate(value){listGate=value;},
+    setSession(id){activeSessionId=id;snapshot.byId=id?{[id]:{id,retainedBy:{mainView:1}}}:{};render();},
+    dispose(){for(const fn of disposers.splice(0))fn?.();}};
 }
 
 test('native main page and sidebar entry browse without chat side effects; paging/search/sort are deterministic',async t=>{
@@ -226,6 +232,38 @@ test('composer chip without an associated project opens a blank add form, never 
   await act(async()=>chip.click());assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Add project');
   assert.equal(document.getElementById('dpm-name').value,'');assert.equal(document.querySelector('.dpm-page'),null);
   assert.deepEqual(h.selections,[]);await h.click('Cancel');
+});
+
+test('project icon resolves the current association again instead of opening add from stale cache',async t=>{
+  const h=await harness(t);
+  const chip=document.querySelector('.dpm-dock');assert.equal(chip.title,'Add project');
+  h.setActiveProject('p10');
+  await act(async()=>chip.click());
+  assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Edit project');
+  assert.equal(document.getElementById('dpm-name').value,'Project 10');
+  await h.click('Cancel');
+  h.setFailure('list');
+  await act(async()=>chip.click());
+  assert.equal(document.querySelector('[role=dialog]'),null,'lookup errors never open an add form');
+  assert.ok(document.body.textContent.includes('Injected failure'),'failure is visible outside a closed editor');
+  assert.equal(chip.disabled,false,'failed requests can retry');
+  h.setFailure(null);await act(async()=>chip.click());
+  assert.equal(document.querySelector('[role=dialog]').getAttribute('aria-label'),'Edit project');
+});
+
+test('pending project lookup is deduplicated and cannot open an editor after switching sessions',async t=>{
+  const h=await harness(t,{activeProjectId:'p10'});
+  let finish;h.setListGate(new Promise(resolve=>{finish=resolve;}));
+  const chip=document.querySelector('.dpm-dock'),before=h.requests.length;
+  await act(async()=>{chip.click();chip.click();});
+  assert.equal(h.requests.length,before+1,'double clicks share one lookup');
+  assert.equal(chip.disabled,true);
+  h.setActiveProject('p11');await act(async()=>h.setSession('s2'));
+  assert.equal(document.querySelector('.dpm-dock').disabled,false,'a new session is not locked by the old lookup');
+  await act(async()=>finish());
+  assert.equal(document.querySelector('[role=dialog]'),null,'late results for the old session are discarded');
+  await act(async()=>document.querySelector('.dpm-dock').click());
+  assert.equal(document.getElementById('dpm-name').value,'Project 11');
 });
 
 test('new session waits for creation, prevents double clicks and keeps page visible on failure',async t=>{
