@@ -82,10 +82,17 @@ test('project browsing, draft protection, shortcuts, folder recovery and global 
     assert.equal(dom.window.localStorage.getItem('dsh-workdock-sort'),'recent');
     await click('Open folder in file manager',card('Zulu'));
     assert.ok(calls.some(c=>c.args.action==='open_folder'&&c.args.id==='z'&&!c.sessionId));
-    await click('Copy primary path',card('Zulu'));assert.match(document.querySelector('.dpm-global [role=alert]').textContent,/Clipboard is unavailable/);
+    assert.equal([...card('Zulu').querySelectorAll('button')].some(button=>button.textContent==='Copy primary path'),false,'the project list no longer includes the copy-primary action');
+    const actionsStyle=dom.window.getComputedStyle(card('Zulu').querySelector('.dpm-actions'));
+    assert.equal(actionsStyle.width,'1%');assert.equal(actionsStyle.whiteSpace,'nowrap');
+    assert.equal(dom.window.getComputedStyle(card('Zulu').querySelector('.dpm-actions .dpm-row')).flexWrap,'nowrap');
+    for(const button of card('Zulu').querySelectorAll('.dpm-actions button')){
+      const style=dom.window.getComputedStyle(button);assert.equal(style.flexShrink,'0');assert.equal(style.whiteSpace,'nowrap');
+    }
+    await context();await click('Copy primary path');assert.match(document.querySelector('.dpm-global [role=alert]').textContent,/Clipboard is unavailable/);
     await expire(3000);assert.match(document.querySelector('.dpm-global [role=alert]').textContent,/Clipboard is unavailable/,'error notices stay until dismissed');
     let copied='';Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async path=>{copied=path;}},configurable:true});
-    await click('Copy primary path',card('Zulu'));assert.equal(copied,'D:/one/src');
+    await context();await click('Copy primary path');assert.equal(copied,'D:/one/src');
     assert.match(document.querySelector('.dpm-global [role=status]').textContent,/Path copied/);
     await expire(3000);assert.doesNotMatch(document.querySelector('.dpm-global')?.textContent||'',/Path copied/,'status notices dismiss themselves after 3s');
     assert.deepEqual(created,[],'passive browsing must not create sessions');

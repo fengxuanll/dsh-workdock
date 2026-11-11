@@ -1,6 +1,6 @@
 {
   "name": "dsh-workdock",
-  "version": "0.2.13",
+  "version": "0.3.0",
   "description": "多目录项目管理与主要工作目录绑定",
   "type": "module",
   "license": "MIT",
@@ -13,6 +13,7 @@
   "files": [
     "index.js",
     "core.js",
+    "favorites.js",
     "folder-opener.js",
     "client.js",
     "cordis.patch.yml",
@@ -25,7 +26,7 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check index.js && node --check src/index.js && node --check core.js && node --check client.js",
+    "check": "node --check index.js && node --check src/index.js && node --check core.js && node --check favorites.js && node --check client.js",
     "build": "node scripts/build.mjs"
   },
   "dsh": {

@@ -4033,11 +4033,11 @@ function quoted(value) {
 function textOnlyImageText(ref) {
   return `[image omitted because this model accepts text only; attachment sha256:${String(ref.attachmentId).slice(7, 15)}]`;
 }
-function contentHasImage(content) {
-  return content.some((block) => block.type === "image");
+function contentHasImage(content2) {
+  return content2.some((block) => block.type === "image");
 }
-function contentHasFile(content) {
-  for (const block of content) if (block.type === "file") return true;
+function contentHasFile(content2) {
+  for (const block of content2) if (block.type === "file") return true;
   return false;
 }
 function fileHandleText(ref, readonlyPath) {
@@ -4064,10 +4064,10 @@ function replaceFilesWithHandles(blocks, resolvePath) {
 function projectFilesToText(messages, resolvePath) {
   if (!messages.some((message) => contentHasFile(message.content))) return messages;
   return messages.map((message) => {
-    const content = replaceFilesWithHandles(message.content, resolvePath);
-    return content === message.content ? message : {
+    const content2 = replaceFilesWithHandles(message.content, resolvePath);
+    return content2 === message.content ? message : {
       ...message,
-      content
+      content: content2
     };
   });
 }
@@ -4089,10 +4089,10 @@ function replaceImagesForTextModel(blocks) {
 function projectImagesForTextModel(messages) {
   if (!messages.some((message) => contentHasImage(message.content))) return messages;
   return messages.map((message) => {
-    const content = replaceImagesForTextModel(message.content);
-    return content === message.content ? message : {
+    const content2 = replaceImagesForTextModel(message.content);
+    return content2 === message.content ? message : {
       ...message,
-      content
+      content: content2
     };
   });
 }
@@ -4147,7 +4147,7 @@ function projectToolUpdates(messages, tools, toolUpdate, history) {
       continue;
     }
     if (!updateIds.has(message.id)) continue;
-    const content = message.content.filter((block) => {
+    const content2 = message.content.filter((block) => {
       switch (block.type) {
         case "tool-addition":
           if (!declarations.has(block.toolName) || offered.has(block.toolName)) return false;
@@ -4160,11 +4160,11 @@ function projectToolUpdates(messages, tools, toolUpdate, history) {
           return true;
       }
     });
-    if (content.length === 0) continue;
-    if (content.length === message.content.length) projectedMessages.push(message);
+    if (content2.length === 0) continue;
+    if (content2.length === message.content.length) projectedMessages.push(message);
     else projectedMessages.push({
       ...message,
-      content
+      content: content2
     });
   }
   return {
@@ -6935,8 +6935,8 @@ function errorMessage2(error51) {
     return "<unprintable thrown value>";
   }
 }
-function failureMessageFromContent(content) {
-  const text = content.map((block) => block.type === "text" ? block.text : `[${block.type} content]`).join("\n");
+function failureMessageFromContent(content2) {
+  const text = content2.map((block) => block.type === "text" ? block.text : `[${block.type} content]`).join("\n");
   return text.length > 0 ? text : "tool result blocked by post-execute policy";
 }
 function materializePresentation(candidate) {
@@ -7685,10 +7685,10 @@ var ToolRuntime = class extends Service {
     try {
       const project2 = this.contentProjectors.get(exec);
       this.contentProjectors.delete(exec);
-      const content = project2?.(exec, result);
-      const projected = content === void 0 ? result : this.markCanonical(exec, this.materializeFinalResult({
+      const content2 = project2?.(exec, result);
+      const projected = content2 === void 0 ? result : this.markCanonical(exec, this.materializeFinalResult({
         ...result,
-        content
+        content: content2
       }));
       const postResult = await this.postExecute(exec, projected);
       return this.finishScheduledExecution(exec, this.callerCancelled(exec) && !postResult.isError ? this.cancellationResult(exec, postResult) : postResult);
@@ -7724,10 +7724,10 @@ var ToolRuntime = class extends Service {
   applyFinalContent(exec, result) {
     const finalizeContent = this.contentFinalizers.get(exec);
     if (finalizeContent === void 0) return result;
-    const content = finalizeContent(exec, result);
-    return content === void 0 ? result : {
+    const content2 = finalizeContent(exec, result);
+    return content2 === void 0 ? result : {
       ...result,
-      content
+      content: content2
     };
   }
   /** Notify observers without exposing a mutation or error channel into the outcome. */
@@ -7879,7 +7879,7 @@ var ToolRuntime = class extends Service {
     } catch (error51) {
       throw projectionError(tool.name, "render", error51);
     }
-    const content = snapshotProjection(tool.name, "render", rendered);
+    const content2 = snapshotProjection(tool.name, "render", rendered);
     let meta3;
     if (tool.output.presentationMeta !== void 0) {
       let projected;
@@ -7894,7 +7894,7 @@ var ToolRuntime = class extends Service {
     return this.markCanonical(exec, this.materializeFinalResult({
       isError: false,
       value,
-      content,
+      content: content2,
       ...meta3 !== void 0 ? { meta: meta3 } : {},
       ...concludesTurn ? { concludesTurn: true } : {}
     }));
@@ -10282,8 +10282,8 @@ var Doc = class {
       arg(this, { execution: "async" });
       return;
     }
-    const content = arg;
-    const lines = content.split("\n").filter((x) => x);
+    const content2 = arg;
+    const lines = content2.split("\n").filter((x) => x);
     const minIndent = Math.min(...lines.map((x) => x.length - x.trimStart().length));
     const dedented = lines.map((x) => x.slice(minIndent)).map((x) => " ".repeat(this.indent * 2) + x);
     for (const line of dedented) {
@@ -10293,8 +10293,8 @@ var Doc = class {
   compile() {
     const F = Function;
     const args = this?.args;
-    const content = this?.content ?? [``];
-    const lines = [...content.map((x) => `  ${x}`)];
+    const content2 = this?.content ?? [``];
+    const lines = [...content2.map((x) => `  ${x}`)];
     return new F(...args, lines.join("\n"));
   }
 };
@@ -22754,12 +22754,104 @@ function launchFileManager(command, args, launch) {
   });
 }
 
+// favorites.js
+import { randomUUID as randomUUID3 } from "node:crypto";
+var FAVORITE_CONTENT_BYTES = 1024 * 1024;
+var shortText = external_exports.string().max(500);
+var content = external_exports.string().max(FAVORITE_CONTENT_BYTES).refine((value) => Buffer.byteLength(value, "utf8") <= FAVORITE_CONTENT_BYTES);
+var favoriteSchema = external_exports.object({
+  id: external_exports.string().uuid(),
+  sessionId: shortText,
+  projectId: external_exports.string().nullable(),
+  projectTitle: external_exports.string().nullable(),
+  sessionTitle: shortText,
+  sourceKey: shortText.min(1),
+  turn: external_exports.number().int().nonnegative(),
+  seq: external_exports.number().int().nonnegative().optional(),
+  content,
+  title: shortText,
+  note: external_exports.string().max(32768),
+  createdAt: external_exports.number().int().nonnegative(),
+  revision: external_exports.number().int().positive()
+});
+var favoriteActions = ["favorite_list", "favorite_save", "favorite_update", "favorite_remove"];
+var favoriteInput = {
+  sourceKey: shortText.min(1).optional(),
+  turn: external_exports.number().int().nonnegative().optional(),
+  seq: external_exports.number().int().nonnegative().optional(),
+  content: content.optional(),
+  sessionTitle: shortText.optional(),
+  note: external_exports.string().max(32768).optional(),
+  projectId: external_exports.string().max(500).nullable().optional()
+};
+function fail(message, status = 400) {
+  throw Object.assign(new Error(message), { status });
+}
+function operateFavorite(manager, args, session) {
+  return manager.run(async () => {
+    const state = manager.snapshot();
+    const favorites = state.favorites ?? [];
+    if (args.action === "favorite_list") {
+      return { favorites: favorites.filter((item) => args.projectId === void 0 || item.projectId === args.projectId).sort((a, b) => b.createdAt - a.createdAt) };
+    }
+    if (args.action === "favorite_save") {
+      const sessionId = session?.header.id ?? session?.id;
+      if (!sessionId) fail("\u9700\u8981\u6D3B\u52A8\u4F1A\u8BDD", 409);
+      if (!args.sourceKey || !Number.isInteger(args.turn) || args.turn < 0 || typeof args.content !== "string") fail("\u6536\u85CF\u5FEB\u7167\u53C2\u6570\u65E0\u6548");
+      const previous2 = favorites.find((item) => item.sessionId === sessionId && item.sourceKey === args.sourceKey);
+      if (previous2) return { favorite: previous2, duplicate: true };
+      const project2 = manager.projectFor(session, state);
+      const favorite2 = favoriteSchema.parse({
+        id: randomUUID3(),
+        sessionId,
+        projectId: project2?.id ?? null,
+        projectTitle: project2?.title ?? null,
+        sessionTitle: args.sessionTitle ?? "",
+        sourceKey: args.sourceKey,
+        turn: args.turn,
+        ...args.seq !== void 0 ? { seq: args.seq } : {},
+        content: args.content,
+        title: args.title ?? "",
+        note: "",
+        createdAt: Date.now(),
+        revision: 1
+      });
+      state.favorites = [...favorites, favorite2];
+      await manager.store.set(state);
+      return { favorite: favorite2, duplicate: false };
+    }
+    if (!args.id) fail("\u6536\u85CF ID \u4E0D\u80FD\u4E3A\u7A7A");
+    const previous = favorites.find((item) => item.id === args.id);
+    if (args.action === "favorite_remove" && !previous) return { id: args.id, removed: false };
+    if (!previous) fail("\u6536\u85CF\u4E0D\u5B58\u5728\uFF0C\u8BF7\u5237\u65B0\u5217\u8868", 404);
+    if (args.action === "favorite_update" || args.revision !== void 0) {
+      if (args.revision !== previous.revision) fail("\u6536\u85CF\u5DF2\u5728\u5176\u4ED6\u7A97\u53E3\u66F4\u65B0\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5", 409);
+    }
+    if (args.action === "favorite_remove") {
+      state.favorites = favorites.filter((item) => item.id !== args.id);
+      await manager.store.set(state);
+      return { id: args.id, removed: true };
+    }
+    if (args.action !== "favorite_update") fail("\u672A\u77E5\u6536\u85CF\u64CD\u4F5C");
+    if (args.title === void 0 && args.note === void 0) fail("\u8BF7\u63D0\u4F9B\u6536\u85CF\u6807\u9898\u6216\u5907\u6CE8");
+    const favorite = favoriteSchema.parse({
+      ...previous,
+      ...args.title !== void 0 ? { title: args.title } : {},
+      ...args.note !== void 0 ? { note: args.note } : {},
+      revision: previous.revision + 1
+    });
+    state.favorites = favorites.map((item) => item.id === args.id ? favorite : item);
+    await manager.store.set(state);
+    return { favorite };
+  });
+}
+
 // src/index.js
 var inject = ["storageDomain", "commands", "tools", "systemPrompt", "workspaceRegistry", "connection", "agents"];
 var project = external_exports.object({ id: external_exports.string(), title: external_exports.string(), folders: external_exports.array(external_exports.string()).min(1), primary: external_exports.string(), sessionRoots: external_exports.array(external_exports.string()), pinned: external_exports.boolean(), revision: external_exports.number(), lastUsedAt: external_exports.number().nonnegative().optional() });
 var labelColor = external_exports.union([external_exports.enum(LABEL_COLORS), external_exports.string().length(7).regex(HEX_COLOR)]);
 var spec = defineDomain({ name: "dsh_project_manager", version: 1, tables: {}, global: {
-  schema: external_exports.object({ projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()), colors: external_exports.record(external_exports.string(), labelColor).optional(), sessionDirectories: external_exports.record(external_exports.string(), external_exports.object({ path: external_exports.string().nullable(), revision: external_exports.number().int().nonnegative() })).optional() }),
+  schema: external_exports.object({ favorites: external_exports.array(favoriteSchema).optional(), projects: external_exports.array(project), bindings: external_exports.record(external_exports.string(), external_exports.string()), colors: external_exports.record(external_exports.string(), labelColor).optional(), sessionDirectories: external_exports.record(external_exports.string(), external_exports.object({ path: external_exports.string().nullable(), revision: external_exports.number().int().nonnegative() })).optional() }),
   initial: { projects: [], bindings: {} }
 } });
 async function apply(ctx) {
@@ -22818,6 +22910,7 @@ async function apply(ctx) {
     await initialize(agent);
     const changesDirectory = ["save", "bind", "remove", "set_session_directory"].includes(args.action);
     const result = await manager.execute(args, agent?.session, changesDirectory && agent ? directoryApplier(agent, signal) : void 0);
+    if (args.action === "list") delete result.favorites;
     const warning = agent && inheritanceWarnings.get(agent.session.header.id ?? agent.session.id);
     if (warning) result.inheritanceWarnings = [warning];
     if (args.action === "list" || args.action === "save" || args.action === "bind") {
@@ -22858,7 +22951,8 @@ async function apply(ctx) {
   const apiSchema = external_exports.object({
     sessionId: external_exports.string().min(1).max(500).optional(),
     args: external_exports.object({
-      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "check_directories", "touch", "set_color", "get_session_directory", "set_session_directory"]),
+      action: external_exports.enum(["list", "save", "bind", "remove", "pin", "open_folder", "check_directories", "touch", "set_color", "get_session_directory", "set_session_directory", ...favoriteActions]),
+      ...favoriteInput,
       path: external_exports.string().max(32768).nullable().optional(),
       directoryRevision: external_exports.number().int().nonnegative().optional(),
       directoryPolicy: external_exports.enum(["keep", "follow"]).optional(),
@@ -22881,14 +22975,25 @@ async function apply(ctx) {
       try {
         if (request.signal.aborted) return json2(499, { ok: false, error: "\u8BF7\u6C42\u5DF2\u53D6\u6D88" });
         const text = await request.text();
-        if (text.length > 131072) return json2(413, { ok: false, error: "\u9879\u76EE\u914D\u7F6E\u8FC7\u5927" });
+        if (text.length > 6 * FAVORITE_CONTENT_BYTES + 32768) return json2(413, { ok: false, error: "\u8BF7\u6C42\u8FC7\u5927" });
+        let raw;
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          return json2(text.length > 131072 ? 413 : 400, { ok: false, error: "\u9879\u76EE\u7BA1\u7406\u8BF7\u6C42\u53C2\u6570\u65E0\u6548" });
+        }
+        if (raw?.args?.action !== "favorite_save" && text.length > 131072) return json2(413, { ok: false, error: "\u9879\u76EE\u914D\u7F6E\u8FC7\u5927" });
         let payload;
         try {
-          payload = apiSchema.parse(JSON.parse(text));
+          payload = apiSchema.parse(raw);
         } catch {
           return json2(400, { ok: false, error: "\u9879\u76EE\u7BA1\u7406\u8BF7\u6C42\u53C2\u6570\u65E0\u6548" });
         }
         const agent = payload.sessionId ? ctx.agents.get(payload.sessionId) : void 0;
+        if (favoriteActions.includes(payload.args.action)) {
+          if (payload.args.action === "favorite_save" && (!payload.sessionId || !agent || (agent.session.header.id ?? agent.session.id) !== payload.sessionId)) return json2(409, { ok: false, error: "\u5F53\u524D\u804A\u5929\u5C1A\u672A\u5C31\u7EEA\uFF0C\u8BF7\u6253\u5F00\u804A\u5929\u540E\u91CD\u8BD5" });
+          return json2(200, { ok: true, value: await operateFavorite(manager, payload.args, agent?.session) });
+        }
         if (payload.sessionId && (!agent || (agent.session.header.id ?? agent.session.id) !== payload.sessionId) || !agent && ["save", "bind", "get_session_directory", "set_session_directory"].includes(payload.args.action)) return json2(409, { ok: false, error: "\u5F53\u524D\u804A\u5929\u5C1A\u672A\u5C31\u7EEA\uFF0C\u8BF7\u6253\u5F00\u804A\u5929\u540E\u91CD\u8BD5" });
         const mutation = ["save", "bind", "remove", "set_session_directory"].includes(payload.args.action);
         let value;
@@ -22903,7 +23008,7 @@ async function apply(ctx) {
         } else value = await perform(payload.args, agent, request.signal);
         return json2(200, { ok: true, value });
       } catch (error51) {
-        return json2(400, { ok: false, error: error51.message });
+        return json2(error51.status ?? 400, { ok: false, error: error51.message });
       }
     }
   }));

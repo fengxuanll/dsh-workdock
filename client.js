@@ -75,7 +75,7 @@ window.__ModuleLoader__.load({
     const pageCss = `
 .dpm-page{box-sizing:border-box;display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;height:100%;padding:calc(24px + var(--dsh-frame-top-clearance,0px)) 28px 24px max(28px,var(--dsh-frame-leading-clearance,0px));color:var(--dsw-alias-text-primary,#eee);background:var(--dsw-alias-bg-base,#292929)}
 .dpm-page-content{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0}.dpm-table tr.dpm-card{border-radius:0;padding:0;border:0}.dpm-page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.dpm-page h1{font-weight:600;font-size:22px;line-height:1.3;margin:0}.dpm-page-header p{margin:5px 0 0}.dpm-page-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}.dpm-page-toolbar input{flex:1;min-width:160px;max-width:540px}.dpm-page-toolbar label{display:flex;align-items:center;gap:8px;font-size:12px}.dpm-page-toolbar .dpm-save{margin-left:auto}
-.dpm-table-scroll{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--dsw-alias-border-l3,#555);border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}.dpm-table th{position:sticky;top:0;z-index:1;background:var(--dsw-alias-bg-base,#292929);font-weight:500;font-size:12px;color:var(--dsw-alias-label-secondary,#aaa);padding:11px 12px;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table td{padding:13px 12px;vertical-align:top;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table tr:last-child td{border-bottom:0}.dpm-table tbody tr:hover{background:var(--dsw-alias-bg-hover,#ffffff09)}.dpm-table td:first-child{min-width:140px;max-width:240px;overflow-wrap:anywhere}.dpm-table strong{font-weight:600}.dpm-table .dpm-path{min-width:180px;max-width:460px;opacity:.8;margin:0;line-height:1.6}.dpm-table .dpm-count{white-space:nowrap}.dpm-table .dpm-actions{min-width:230px;max-width:330px}.dpm-table .dpm-row{gap:4px}.dpm-table .dpm-row button{font-size:12px;padding:3px 7px}.dpm-table .dpm-badge{display:inline-block}.dpm-table-empty{text-align:center;padding:48px 16px!important}
+.dpm-table-scroll{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--dsw-alias-border-l3,#555);border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}.dpm-table th{position:sticky;top:0;z-index:1;background:var(--dsw-alias-bg-base,#292929);font-weight:500;font-size:12px;color:var(--dsw-alias-label-secondary,#aaa);padding:11px 12px;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table td{padding:13px 12px;vertical-align:top;border-bottom:1px solid var(--dsw-alias-border-l3,#555)}.dpm-table tr:last-child td{border-bottom:0}.dpm-table tbody tr:hover{background:var(--dsw-alias-bg-hover,#ffffff09)}.dpm-table td:first-child{min-width:140px;max-width:240px;overflow-wrap:anywhere}.dpm-table strong{font-weight:600}.dpm-table .dpm-path{min-width:180px;max-width:460px;opacity:.8;margin:0;line-height:1.6}.dpm-table .dpm-count{white-space:nowrap}.dpm-table .dpm-actions{width:1%;white-space:nowrap}.dpm-table .dpm-row{gap:4px}.dpm-table .dpm-actions .dpm-row{flex-wrap:nowrap}.dpm-table .dpm-row button{font-size:12px;padding:3px 7px}.dpm-table .dpm-actions button{flex-shrink:0;white-space:nowrap}.dpm-table .dpm-badge{display:inline-block}.dpm-table-empty{text-align:center;padding:48px 16px!important}
 .dpm-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:14px;font-size:12px}.dpm-pagination label,.dpm-pagination nav{display:flex;align-items:center;gap:8px}.dpm-page :is(button,input,select):focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-page .dpm-error{margin:6px 0}.dpm-page-nav{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
 @media(max-width:700px){.dpm-page{padding:16px 12px}.dpm-page-header{align-items:flex-start;margin-bottom:14px}.dpm-page h1{font-size:18px}.dpm-page-toolbar input{max-width:none}.dpm-page-toolbar .dpm-save{margin-left:0}.dpm-pagination{gap:10px}.dpm-table td,.dpm-table th{padding:10px 8px}}
 `;
@@ -95,7 +95,9 @@ window.__ModuleLoader__.load({
     const directoryCss = `
 .dpm-directory-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px;padding:3px;border:0;border-radius:5px;background:transparent;color:var(--dsw-alias-label-secondary,#aaa);cursor:pointer;vertical-align:middle;flex:none}.dpm-directory-button .dpm-folder-icon{width:16px;height:16px;opacity:1}.dpm-directory-button[data-override=true]{color:var(--dsw-alias-state-business-primary,#8bb6ed)}.dpm-directory-button:hover{background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-directory-button:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}.dpm-directory-button:disabled{opacity:.4;cursor:default}.dpm-directory-mode{display:flex;align-items:center;gap:9px;margin:12px 0;cursor:pointer}.dpm .dpm-directory-mode input{width:auto;margin:0;accent-color:var(--dsw-alias-state-business-primary,#8bb6ed)}.dpm-directory-summary{padding:10px 0;border-bottom:1px solid var(--dsw-alias-border-l3,#444);font-size:12px}.dpm-directory-path{display:block;overflow-wrap:anywhere;margin:6px 0;line-height:1.5}.dpm .dpm-directory-folders{width:100%;max-width:100%;margin:0 0 8px}.dpm-directory-selected{font-size:12px;overflow-wrap:anywhere;line-height:1.6}.dpm .dpm-directory-note{margin:12px 0 0;line-height:1.6}.dpm .dpm-directory-restore{margin-right:auto}.dpm .dpm-directory-policy{display:grid;gap:8px;margin-top:14px;font-size:12px}.dpm-directory-policy select{max-width:100%}
 `;
-    const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss + directoryCss;
+    const favoriteCss = `
+.dpm-tabs{display:flex;gap:8px;margin-bottom:16px}.dpm-tabs button[aria-pressed=true]{border-color:var(--dsw-alias-state-business-primary,#8bb6ed);background:var(--dsw-alias-bg-hover,#ffffff15)}.dpm-favorites{display:flex;flex-direction:column;flex:1;min-height:0}.dpm-favorite-columns{display:grid;grid-template-columns:minmax(220px,32%) minmax(0,1fr);flex:1;min-height:0;border-block:1px solid var(--dsw-alias-border-l3,#555)}.dpm-favorite-list{overflow:auto;padding:8px 12px 8px 0;border-right:1px solid var(--dsw-alias-border-l3,#555)}.dpm .dpm-favorite-item{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:12px;margin-bottom:4px}.dpm-favorite-item[aria-current=true]{background:var(--dsw-alias-bg-hover,#ffffff15);box-shadow:inset 3px 0 #c2ad44}.dpm-favorite-item strong{display:block;overflow-wrap:anywhere}.dpm-favorite-meta{display:block;font-size:12px;opacity:.65;line-height:1.6;overflow-wrap:anywhere}.dpm-favorite-snippet{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;margin-top:6px}.dpm-favorite-detail{overflow:auto;padding:16px 24px;min-width:0}.dpm-favorite-content{margin:20px 0;overflow-wrap:anywhere;font-size:14px;line-height:1.7}.dpm-favorite-content pre{overflow:auto;white-space:pre-wrap}.dpm-favorite-content table{display:block;overflow:auto}.dpm-favorite-content img{max-width:100%}.dpm-favorite-detail textarea{box-sizing:border-box;width:100%;min-height:88px;resize:vertical;font:inherit;color:inherit;background:transparent;border:1px solid var(--dsw-alias-border-l3,#555);border-radius:8px;padding:8px}.dpm-favorite-highlight{outline:2px solid #c2ad44;outline-offset:4px}.dpm-favorite-button{font:inherit;color:var(--dsw-alias-label-secondary,#aaa);background:transparent;border:0;border-radius:6px;cursor:pointer;padding:4px 6px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px}.dpm-favorite-button[aria-pressed=true]{color:#c2ad44}.dpm-favorite-button:disabled{opacity:.4;cursor:default}.dpm-favorite-button:focus-visible,.dpm-favorite-detail textarea:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#8bb6ed);outline-offset:2px}@media(max-width:700px){.dpm-favorite-columns{display:flex;flex-direction:column;overflow:auto}.dpm-favorite-list{max-height:35vh;flex:none;border-right:0;border-bottom:1px solid var(--dsw-alias-border-l3,#555);padding:4px 0}.dpm-favorite-detail{overflow:visible;padding:16px 4px}}`;
+    const css = baseCss + folderCss + compactCss + pageCss + colorCss + turnCss + directoryCss + favoriteCss;
     const zh = { title:'项目管理', edit:'编辑项目', add:'添加项目', name:'项目名称', folders:'源文件夹', primary:'主要目录', addFolder:'添加文件夹', path:'输入绝对目录路径', save:'保存', cancel:'取消', close:'关闭', remove:'移除本地项目', removeFolder:'移除', bind:'用于当前聊天', active:'当前项目', pin:'置顶', unpin:'取消置顶', newChat:'新建会话', empty:'暂无项目，添加项目后可设置多个源目录。', needSession:'请先打开或创建一个聊天，再管理项目。', note:'保存后立即用于当前聊天。后续修改与新命令默认使用主要目录；其他源目录作为只读参考。已运行的终端进程保留原目录。', removeConfirm:'仅移除项目配置，不删除磁盘文件。确认移除？', reload:'刷新', conflict:'操作失败', browse:'选择目录' };
     const en = { title:'Projects', edit:'Edit project', add:'Add project', name:'Project name', folders:'Source folders', primary:'Primary', addFolder:'Add folder', path:'Absolute directory path', save:'Save', cancel:'Cancel', close:'Close', remove:'Remove project', removeFolder:'Remove', bind:'Use in this chat', active:'Current project', pin:'Pin', unpin:'Unpin', newChat:'New session', empty:'No projects. Add one to configure its source folders.', needSession:'Open or create a chat before managing projects.', note:'Subsequent edits and new commands use the primary directory. Other folders are read-only references. Existing terminal processes keep their cwd.', removeConfirm:'Remove project settings? Files on disk will be kept.', reload:'Refresh', conflict:'Operation failed', browse:'Choose directory' };
     Object.assign(zh,{more:'更多…',treeOrderUnavailable:'当前宿主不支持项目排序，请升级 Harness。',treeProjectUnavailable:'项目已不存在，请刷新后重试。',nativeUnavailable:'宿主项目菜单不可用，请使用项目行上的更多按钮。',removeTreeConfirm:'从左侧项目树移除此项目及目录配置？磁盘文件和聊天记录会保留。'});
@@ -116,6 +118,8 @@ window.__ModuleLoader__.load({
     Object.assign(en,{hideTurn:'Hide turn',hiddenTurn:'This turn is hidden',restoreTurn:'Show turn',restoreTurns:'Show all hidden turns',hideTurnNote:'Hidden only in this browser. History and model context are unchanged; context usage is not reduced.',hideStorageError:'Cannot save hidden turns. Check browser local storage permissions.'});
     Object.assign(zh,{sessionDirectory:'会话工作目录',setSessionDirectory:'设置工作目录…',directoryFollow:'跟随项目目录',directoryCustom:'会话专属目录',directoryInitial:'会话初始目录',directoryCurrent:'当前生效目录',directoryChoose:'选择其他目录…',directoryPick:'选择会话工作目录',directorySaved:'会话工作目录已更新，对后续操作生效',directoryNote:'仅影响当前会话后续操作；其他会话、项目主要目录及已运行进程不变。选择其他目录不会自动获得额外访问权限。',directoryOutside:'该目录不在项目源目录中；实际访问仍受 Harness 权限和沙箱策略限制。',directoryLoading:'正在读取工作目录…',directoryRestore:'恢复跟随项目',directorySwitch:'切换项目时如何处理会话专属目录？',directoryKeep:'保留会话专属目录',directoryPolicy:'请选择处理方式',directoryRetry:'重新读取目录',directorySource:'来源'});
     Object.assign(en,{sessionDirectory:'Session working directory',setSessionDirectory:'Set working directory…',directoryFollow:'Follow project directory',directoryCustom:'Session-specific directory',directoryInitial:'Initial session directory',directoryCurrent:'Effective directory',directoryChoose:'Choose another directory…',directoryPick:'Choose session working directory',directorySaved:'Session working directory updated for subsequent work',directoryNote:'Only subsequent work in this session changes. Other sessions, the project primary and running processes are unchanged. Choosing a directory does not grant additional access.',directoryOutside:'This directory is outside the project folders. Harness permissions and sandbox rules still apply.',directoryLoading:'Loading working directory…',directoryRestore:'Follow project again',directorySwitch:'How should the session directory change with this project?',directoryKeep:'Keep session-specific directory',directoryPolicy:'Choose how to proceed',directoryRetry:'Reload directory',directorySource:'Source'});
+    Object.assign(zh,{favorites:'收藏回复',favorite:'收藏回复',unfavorite:'取消收藏',favoriteSaved:'已收藏，可在项目管理的「收藏回复」中查找',favoriteRemoved:'已取消收藏',favoriteSearch:'搜索正文、标题、备注或会话',favoriteAll:'全部项目',favoriteUnassigned:'未关联项目',favoriteProject:'所属项目',favoriteEmpty:'暂无收藏。在回复操作栏点击星标，即可在这里查找。',favoriteNoResults:'没有匹配的收藏，试试其他关键词或全部项目。',favoriteSelect:'选择一条收藏查看完整回复。',favoriteTitle:'收藏标题',favoriteNote:'我的备注',favoriteUpdated:'收藏已更新',favoriteSource:'回到原对话',favoriteMissing:'来源不可用或已删除，收藏快照仍保留。',favoriteCopy:'复制回复',favoriteCode:'代码',favoriteWrap:'自动换行',favoriteUnwrap:'取消换行',favoriteFootnotes:'脚注',favoriteCopied:'回复已复制',favoriteLoading:'正在读取收藏…',favoriteSnapshot:'收藏时的回复快照；附件文件不另行备份。',favoriteDiscard:'放弃收藏标题或备注的未保存修改？',favoritePending:'生成完成后可收藏',favoriteReload:'重新读取收藏'});
+    Object.assign(en,{favorites:'Saved replies',favorite:'Save reply',unfavorite:'Unsave reply',favoriteSaved:'Reply saved. Find it in Projects > Saved replies.',favoriteRemoved:'Reply unsaved',favoriteSearch:'Search content, title, notes or session',favoriteAll:'All projects',favoriteUnassigned:'No project',favoriteProject:'Project',favoriteEmpty:'No saved replies. Use the star in a reply action bar to save one.',favoriteNoResults:'No matching replies. Try other keywords or all projects.',favoriteSelect:'Select a saved reply to read it in full.',favoriteTitle:'Saved title',favoriteNote:'My notes',favoriteUpdated:'Saved reply updated',favoriteSource:'Back to original chat',favoriteMissing:'The source is unavailable or deleted. The saved snapshot is kept.',favoriteCopy:'Copy reply',favoriteCode:'Code',favoriteWrap:'Wrap lines',favoriteUnwrap:'Unwrap lines',favoriteFootnotes:'Footnotes',favoriteCopied:'Reply copied',favoriteLoading:'Loading saved replies…',favoriteSnapshot:'Snapshot at save time. Attachment files are not backed up.',favoriteDiscard:'Discard unsaved title or notes?',favoritePending:'Save after generation completes',favoriteReload:'Reload saved replies'});
     function folderLabel(path, folders) {
       const parts = path.replace(/[\\/]+$/,'').split(/[\\/]/);
       for(let n=1;n<=parts.length;n++) {
@@ -131,7 +135,7 @@ window.__ModuleLoader__.load({
         add&&h('path',{d:'M18 15v7m-3.5-3.5h7'}));
     }
     return {
-      inject: ['slots', 'layout', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'locale', 'contextMenus'],
+      inject: ['slots', 'layout', 'remote', 'remote.directoryPicker', 'sessions', 'workspaces', 'uiWorkspace', 'uiConversation', 'locale', 'contextMenus'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register('dsh-workdock', { zh, en }));
         const t = ctx.locale.bind('dsh-workdock');
@@ -520,6 +524,106 @@ window.__ModuleLoader__.load({
           if(hover){const project=matchingProject(hover.workspace);publishHover(project?{...hover,project}:null);}
           return value;
         }
+        // Durable snapshots live on the owner-authenticated Host, never in localStorage.
+        let favorites=[],favoriteVersion=0,favoriteLoad=null,favoriteLoaded=false;
+        const favoriteListeners=new Set();
+        const favoriteSource={subscribe(fn){favoriteListeners.add(fn);return()=>favoriteListeners.delete(fn);},getSnapshot:()=>favoriteVersion};
+        function publishFavorites(){favoriteVersion++;for(const fn of favoriteListeners)fn();}
+        async function loadFavorites(force=false){
+          if(favoriteLoad)return favoriteLoad;
+          if(favoriteLoaded&&!force)return favorites;
+          favoriteLoad=call(undefined,{action:'favorite_list'}).then(value=>{favorites=value.favorites;favoriteLoaded=true;publishFavorites();return favorites;}).finally(()=>{favoriteLoad=null;});
+          return favoriteLoad;
+        }
+        function adoptFavorite(value){favorites=[value,...favorites.filter(item=>item.id!==value.id)];publishFavorites();}
+        function forgetFavorite(id){favorites=favorites.filter(item=>item.id!==id);publishFavorites();}
+        const emptyChatSource={subscribe:()=>()=>{},getSnapshot:()=>null};
+        function replySource(sessionId){try{return ctx.uiConversation?.binding(sessionId).target('chat')??emptyChatSource;}catch{return emptyChatSource;}}
+        function Star({filled}){return h('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:filled?'currentColor':'none',stroke:'currentColor',strokeWidth:1.6,'aria-hidden':true},h('path',{d:'m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9Z'}));}
+        function SaveReply({sessionId,messageId,chatSource=emptyChatSource}){
+          const snapshot=useSyncExternalStore(chatSource.subscribe,chatSource.getSnapshot);
+          useSyncExternalStore(favoriteSource.subscribe,favoriteSource.getSnapshot);
+          const [busy,setBusy]=useState(false),[loaded,setLoaded]=useState(false),[error,setError]=useState('');const lock=useRef(false);
+          useEffect(()=>{let live=true;loadFavorites(true).then(()=>{if(live)setLoaded(true);}).catch(e=>{if(live)setError(e.message);});return()=>{live=false;};},[sessionId]);
+          const nodes=snapshot?.nodes?[...snapshot.nodes.values()]:[];
+          const tail=nodes.find(node=>node.kind==='turn-tail'&&String(node.data.closing?.finalNode.messageId)===String(messageId));
+          const closing=tail?.data.closing,content=(closing?.blocks??[]).filter(block=>block.kind==='text').map(block=>block.text).join('');
+          const sourceKey='message:'+messageId,saved=favorites.find(item=>item.sessionId===sessionId&&item.sourceKey===sourceKey);
+          const label=t(saved?'unfavorite':'favorite');
+          async function toggle(){
+            if(lock.current)return;lock.current=true;setBusy(true);setError('');
+            try{
+              if(!loaded){await loadFavorites(true);setLoaded(true);setError('');return;}
+              if(saved){await call(undefined,{action:'favorite_remove',id:saved.id,revision:saved.revision});forgetFavorite(saved.id);announce(t('favoriteRemoved'));}
+              else{
+                const user=nodes.find(node=>node.kind==='user'&&(node.location?.turn?.turn===tail.data.turn));
+                const question=(user?.data.content??[]).filter(block=>block.type==='text').map(block=>block.text).join('');
+                const title=(question.trim().split('\n')[0]||content.trim().split('\n')[0]).slice(0,500);
+                const sessionTitle=ctx.sessions.list.getSnapshot().byId[sessionId]?.displayTitle??'';
+                const value=await call(sessionId,{action:'favorite_save',sourceKey,turn:tail.data.turn,seq:tail.data.seq,content,title,sessionTitle});adoptFavorite(value.favorite);announce(t('favoriteSaved'));
+              }
+            }catch(e){setError(e.message);announce(e.message,true);}finally{lock.current=false;setBusy(false);}
+          }
+          // assistant-actions is only created by the Host for a closed reply. No
+          // DOM text scraping: retain the authored Markdown, not copy-button labels.
+          return h(React.Fragment,null,h('style',null,favoriteCss),h('button',{type:'button',className:'dpm-favorite-button','aria-label':!loaded&&error?t('favoriteReload'):label,'aria-pressed':Boolean(saved),title:error||(!closing?t('favoritePending'):label),disabled:busy||(!error&&(!loaded||!content.trim())),onClick:toggle},h(Star,{filled:Boolean(saved)})));
+        }
+        let stopFavoriteJump=()=>{},favoriteJumpEpoch=0;
+        ctx.effect(()=>()=>{favoriteJumpEpoch++;stopFavoriteJump();});
+        async function goToFavorite(item){
+          const token=++favoriteJumpEpoch;stopFavoriteJump();
+          let reference;
+          try{
+            reference=ctx.sessions.retain(item.sessionId,{source:'mainView'});await reference.ready;
+            if(token!==favoriteJumpEpoch)return;
+            if(item.seq!==undefined)await ctx.sessions.binding(item.sessionId).session.loadThrough(item.seq);
+            if(token!==favoriteJumpEpoch)return;
+            changeHiddenTurns(item.sessionId,item.turn,false);
+            ctx.layout.selectPanel(null);ctx.uiWorkspace.openSession(item.sessionId);
+            let timer,highlightTimer,highlight,stopped=false;
+            const observer=new MutationObserver(find);
+            function cleanup(){stopped=true;observer.disconnect();clearTimeout(timer);clearTimeout(highlightTimer);highlight?.classList.remove('dpm-favorite-highlight');}
+            function find(){
+              if(stopped)return;
+              const occurrence=[...document.querySelectorAll('[data-conversation-session][data-conversation-region="chat"]')].find(node=>node.getAttribute('data-conversation-session')===item.sessionId);
+              const node=occurrence&&[...occurrence.querySelectorAll('[data-chat-turn][data-chat-flow-key]')].find(node=>node.getAttribute('data-chat-turn')===String(item.turn)&&node.closest('[data-conversation-session]')===occurrence);
+              if(!node)return;
+              observer.disconnect();clearTimeout(timer);highlight=node;node.scrollIntoView?.({block:'center',behavior:'instant'});node.classList.add('dpm-favorite-highlight');highlightTimer=setTimeout(cleanup,2400);
+            }
+            observer.observe(document.body,{childList:true,subtree:true});timer=setTimeout(()=>{cleanup();announce(t('favoriteMissing'),true);},6000);stopFavoriteJump=cleanup;find();
+          }catch(e){if(token===favoriteJumpEpoch)announce(t('favoriteMissing')+' '+e.message,true);}finally{reference?.release();}
+        }
+        function FavoritesPanel({projects,activeProjectId,onGuard}){
+          useSyncExternalStore(favoriteSource.subscribe,favoriteSource.getSnapshot);
+          const [filter,setFilter]=useState(activeProjectId||'*'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[draft,setDraft]=useState(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState('');
+          const lock=useRef(false),epoch=useRef(0);
+          const item=favorites.find(value=>value.id===selected),dirty=Boolean(item&&draft&&(draft.title!==item.title||draft.note!==item.note));
+          const dirtyRef=useRef(false);dirtyRef.current=dirty;
+          useEffect(()=>{onGuard(()=>!lock.current&&(!dirtyRef.current||window.confirm(t('favoriteDiscard'))));return()=>onGuard(null);},[]);
+          useEffect(()=>{if(!dirty)return;const unload=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',unload);return()=>window.removeEventListener('beforeunload',unload);},[dirty]);
+          async function reload(){const token=++epoch.current;setLoading(true);setError('');try{await loadFavorites(true);}catch(e){if(token===epoch.current)setError(e.message);}finally{if(token===epoch.current)setLoading(false);}}
+          useEffect(()=>{reload();return()=>{epoch.current++;};},[]);
+          const query=search.trim().toLowerCase();
+          const visible=favorites.filter(value=>(filter==='*'||(value.projectId??'')===filter)&&[value.title,value.note,value.content,value.sessionTitle].some(text=>text.toLowerCase().includes(query))).sort((a,b)=>b.createdAt-a.createdAt||a.id.localeCompare(b.id));
+          function choose(next){if(lock.current||dirty&&!window.confirm(t('favoriteDiscard')))return;setSelected(next?.id??null);setDraft(next?{title:next.title,note:next.note}:null);setError('');}
+          const known=new Map(projects.map(project=>[project.id,project.title]));for(const value of favorites)if(value.projectId&&!known.has(value.projectId))known.set(value.projectId,value.projectTitle);
+          function snippet(value){const at=query?value.content.toLowerCase().indexOf(query):-1;return (at>30?'…':'')+value.content.slice(Math.max(0,at-30),Math.max(0,at-30)+160);}
+          async function mutate(remove=false){
+            if(lock.current||!item)return;lock.current=true;setBusy(true);setError('');
+            try{if(remove){await call(undefined,{action:'favorite_remove',id:item.id,revision:item.revision});forgetFavorite(item.id);setSelected(null);setDraft(null);announce(t('favoriteRemoved'));}
+              else{const value=await call(undefined,{action:'favorite_update',id:item.id,revision:item.revision,...draft});adoptFavorite(value.favorite);setDraft({title:value.favorite.title,note:value.favorite.note});announce(t('favoriteUpdated'));}}
+            catch(e){setError(e.message);}finally{lock.current=false;setBusy(false);}
+          }
+          const MarkdownText=require('@deepseek-ai/dsh-client-ui-primitives').MarkdownText;
+          const button=(text,onClick,props={})=>h('button',{type:'button',disabled:busy,onClick,...props},text);
+          return h('div',{className:'dpm-favorites'},h('div',{className:'dpm-page-toolbar'},h('input',{type:'search',value:search,'aria-label':t('favoriteSearch'),placeholder:t('favoriteSearch'),onChange:e=>setSearch(e.target.value)}),h('select',{'aria-label':t('favoriteProject'),value:filter,onChange:e=>{if(dirty&&!window.confirm(t('favoriteDiscard')))return;setFilter(e.target.value);setSelected(null);setDraft(null);}},h('option',{value:'*'},t('favoriteAll')),h('option',{value:''},t('favoriteUnassigned')),[...known].map(([id,title])=>h('option',{key:id,value:id},title))),button(t('reload'),()=>{if(dirty&&!window.confirm(t('favoriteDiscard')))return;setSelected(null);setDraft(null);reload();})),
+            error&&h('div',{className:'dpm-error',role:'alert'},error),loading&&h('p',{role:'status'},t('favoriteLoading')),
+            h('div',{className:'dpm-favorite-columns'},h('div',{className:'dpm-favorite-list','aria-label':t('favorites')},visible.map(value=>h('button',{type:'button',key:value.id,className:'dpm-favorite-item','aria-current':value.id===selected,disabled:busy,onClick:()=>choose(value)},h('strong',null,value.title),h('span',{className:'dpm-favorite-meta'},(known.get(value.projectId)||value.projectTitle||t('favoriteUnassigned'))+' / '+value.sessionTitle),h('span',{className:'dpm-favorite-meta'},new Date(value.createdAt).toLocaleString()),h('span',{className:'dpm-favorite-snippet'},snippet(value)))),!loading&&!visible.length&&h('p',{role:'status'},t(query||filter!=='*'?'favoriteNoResults':'favoriteEmpty'))),
+            h('section',{className:'dpm-favorite-detail','aria-label':t('favoriteSelect')},item&&draft?h(React.Fragment,null,
+              h('label',{className:'dpm-label',htmlFor:'dpm-favorite-title'},t('favoriteTitle')),h('input',{id:'dpm-favorite-title',value:draft.title,maxLength:500,disabled:busy,onChange:e=>setDraft({...draft,title:e.target.value})}),h('p',null,(known.get(item.projectId)||item.projectTitle||t('favoriteUnassigned'))+' / '+item.sessionTitle),
+              h('div',{className:'dpm-row'},button(t('favoriteSource'),()=>{if(!dirty||window.confirm(t('favoriteDiscard')))goToFavorite(item);}),button(t('favoriteCopy'),async()=>{try{if(!navigator.clipboard?.writeText)throw Error(t('clipboardUnavailable'));await navigator.clipboard.writeText(item.content);announce(t('favoriteCopied'));}catch(e){setError(e.message);}}),button(t('unfavorite'),()=>mutate(true),{className:'dpm-danger'})),h('p',null,t('favoriteSnapshot')),
+              h('div',{className:'dpm-favorite-content'},MarkdownText?h(MarkdownText,{text:item.content,streaming:false,labels:{code:{copyLabel:t('favoriteCopy'),copiedLabel:t('favoriteCopied'),toolbarLabels:{codeLabel:t('favoriteCode'),wrapLabel:t('favoriteWrap'),unwrapLabel:t('favoriteUnwrap')}},footnotes:t('favoriteFootnotes')}}):h('pre',null,item.content)),h('label',{className:'dpm-label',htmlFor:'dpm-favorite-note'},t('favoriteNote')),h('textarea',{id:'dpm-favorite-note',value:draft.note,maxLength:32768,disabled:busy,onChange:e=>setDraft({...draft,note:e.target.value})}),h('div',{className:'dpm-foot'},button(t('cancel'),()=>choose(item),{disabled:busy||!dirty}),button(t('save'),()=>mutate(),{disabled:busy||!dirty||!draft.title.trim(),className:'dpm-save'}))):h('p',null,t('favoriteSelect')))));
+        }
         function SessionDirectoryButton({sessionId}){
           useSyncExternalStore(directorySource.subscribe,directorySource.getSnapshot);
           const version=useSyncExternalStore(projectSource.subscribe,projectSource.getSnapshot);
@@ -539,9 +643,8 @@ window.__ModuleLoader__.load({
           const request=directoryRequest,dialog=useRef(null),current=useRef(request),lock=useRef(false);current.current=request;
           const [info,setInfo]=useState(null),[path,setPath]=useState(null),[mode,setMode]=useState('follow'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false);
           const dirty=Boolean(info)&&((mode==='custom'?path:null)!==info.path);
-          const close=(force=false)=>{
+          const close=()=>{
             if(lock.current)return;
-            if(!force&&dirty&&!window.confirm(t('discard')))return;
             directoryRequest=null;publishDirectory();request?.trigger?.focus({preventScroll:true});
           };
           async function load(target=request){
@@ -576,7 +679,7 @@ window.__ModuleLoader__.load({
             const target=request;lock.current=true;setBusy(true);setError('');
             try{
               await call(target.sessionId,{action:'set_session_directory',path:follow||mode==='follow'?null:path,directoryRevision:info.revision});
-              if(current.current===target){lock.current=false;close(true);announce(t('directorySaved'));}
+              if(current.current===target){lock.current=false;close();announce(t('directorySaved'));}
             }catch(e){if(current.current===target)setError(e.message);}
             finally{if(current.current===target){lock.current=false;setBusy(false);}}
           }
@@ -709,6 +812,8 @@ window.__ModuleLoader__.load({
         function openProjects(){publishTree(null);ctx.layout.selectPanel(PAGE_ID);}
         function ProjectPage(){return h(Manager,{page:true,initialOpen:true,hiddenLauncher:true});}
         function Manager({ sessionId: providedId, dock = false, page = false, initialProject = null, initialOpen = false, hiddenLauncher = false, workspaceId, onClose }) {
+          const [tab,setTab]=useState('projects');const favoriteGuard=useRef(null);
+          function changeTab(value){if(value===tab)return;if(favoriteGuard.current&&!favoriteGuard.current())return;setTab(value);}
           const version = useSyncExternalStore(projectSource.subscribe, projectSource.getSnapshot);
           useSyncExternalStore(colorSource.subscribe,colorSource.getSnapshot);
           const sessions = useSyncExternalStore(ctx.sessions.list.subscribe, ctx.sessions.list.getSnapshot);
@@ -761,6 +866,7 @@ window.__ModuleLoader__.load({
             }
           }
           function close(force=false){
+            if(!force&&favoriteGuard.current&&!favoriteGuard.current())return;
             if(!force&&dirty&&!window.confirm(t('discard')))return;
             clearUndo();checkGeneration.current++;draftEpoch.current++;setDraft(null);setError('');
             if(page){if(!draft)ctx.layout.selectPanel(null);return;}
@@ -860,11 +966,14 @@ window.__ModuleLoader__.load({
           const visible=ordered.slice((currentPage-1)*pageSize,currentPage*pageSize);
           useEffect(()=>{setPageNumber(n=>Math.min(n,pages));},[pages]);
           const warnings=(items,projectId)=>items.filter(w=>!projectId||w.projectId===projectId).map(w=>h('div',{key:w.path,className:'dpm-error',role:'status'},w.path+': '+w.error));
-          const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('colorLabel'),e=>openColor({target:'project',id:p.id},e.currentTarget)),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})),button(t('copy'),()=>copyPath(p.primary)));
+          const projectActions=p=>h('div',{className:'dpm-row'},button(t('edit'),()=>edit(p),{disabled:busy||!sessionId}),button(t('colorLabel'),e=>openColor({target:'project',id:p.id},e.currentTarget)),button(t('newChat'),()=>newChat(p)),button(t(p.pinned?'unpin':'pin'),()=>action({action:'pin',id:p.id})),button(t('openFolder'),()=>action({action:'open_folder',id:p.id})));
           return h('div',{className:page?'dpm dpm-page':'dpm'},h('style',null,css),
             !hiddenLauncher&&h('button',{type:'button',className:dock?'dpm-dock':'dpm-launch',onClick:dock?openCurrentProject:openProjects,disabled:dock&&(loading||busy||launching||!sessionId),title:dock?(active?t('edit')+': '+active.title+'\n'+active.primary:t('add')):active?.primary,'aria-label':dock?(active?t('edit')+': '+active.title:t('add')):undefined,'aria-haspopup':dock?'dialog':undefined},dock?h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinejoin:'round',strokeLinecap:'round','aria-hidden':true},h('path',{d:'m12 3-9 5 9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5'})):'▱ '+t('title')),
             page&&h('section',{className:'dpm-page-content',ref:draft?undefined:dialog,tabIndex:-1,'aria-label':t('title'),inert:draft?'':undefined},
               h('header',{className:'dpm-page-header'},h('div',null,h('h1',null,t('title')),h('p',null,t('pageHint')+' · '+t('projectCount')+': '+state.projects.length)),button(t('backToChat'),()=>close())),
+              h('nav',{className:'dpm-tabs','aria-label':t('title')},button(t('title'),()=>changeTab('projects'),{'aria-pressed':tab==='projects'}),button(t('favorites'),()=>changeTab('favorites'),{'aria-pressed':tab==='favorites'})),
+              tab==='favorites'&&h(FavoritesPanel,{projects:state.projects,activeProjectId:state.activeProjectId,onGuard:value=>{favoriteGuard.current=value;}}),
+              h('div',{className:'dpm-project-tab',style:{display:tab==='projects'?'contents':'none'}},
               h('div',{className:'dpm-page-toolbar'},h('input',{value:search,type:'search',placeholder:t('search'),'aria-label':t('search'),onChange:e=>{setSearch(e.target.value);setPageNumber(1);}}),
                 h('label',null,t('sort'),h('select',{'aria-label':t('sort'),value:sort,onChange:e=>{setSort(e.target.value);setPageNumber(1);try{localStorage.setItem('dsh-workdock-sort',e.target.value);}catch{}}},...['name','recent'].map(key=>h('option',{key,value:key},t('order'+key[0].toUpperCase()+key.slice(1)))))),
                 button(t('reload'),()=>action({action:'list'})),button('+ '+t('add'),()=>edit(null),{className:'dpm-save',disabled:busy||!sessionId})),
@@ -879,7 +988,7 @@ window.__ModuleLoader__.load({
                   !visible.length&&h('tr',null,h('td',{colSpan:4,className:'dpm-table-empty',role:'status'},t(loading?'loading':query?'noResults':'empty')))))),
               h('footer',{className:'dpm-pagination'},h('span',{role:'status','aria-live':'polite'},t('pageStatus').replace('{page}',currentPage).replace('{pages}',pages).replace('{count}',ordered.length)),
                 h('label',null,t('pageSize'),h('select',{'aria-label':t('pageSize'),value:pageSize,onChange:e=>{const size=Number(e.target.value);setPageSize(size);setPageNumber(1);try{localStorage.setItem('dsh-workdock-page-size',String(size));}catch{}}},...[10,25,50,100].map(size=>h('option',{key:size,value:size},size)))),
-                h('nav',{'aria-label':t('title')},button(t('previousPage'),()=>setPageNumber(currentPage-1),{disabled:busy||currentPage<=1}),button(t('nextPage'),()=>setPageNumber(currentPage+1),{disabled:busy||currentPage>=pages})))),
+                h('nav',{'aria-label':t('title')},button(t('previousPage'),()=>setPageNumber(currentPage-1),{disabled:busy||currentPage<=1}),button(t('nextPage'),()=>setPageNumber(currentPage+1),{disabled:busy||currentPage>=pages}))))),
             open&&draft&&h('div',{className:'dpm-backdrop',onClick:e=>{if(e.target===e.currentTarget&&!busy)close();}},
               h('section',{className:'dpm-dialog dpm-edit',ref:dialog,tabIndex:-1,role:'dialog','aria-modal':true,'aria-label':t(draft.id?'edit':'add'),onKeyDown:keyboard},
                 h('div',{className:'dpm-head'},h('h2',null,t(draft.id?'edit':'add')),button('×',()=>close(),{'aria-label':t('close')})),
@@ -1102,6 +1211,7 @@ window.__ModuleLoader__.load({
         }));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-session-directory',order:10.5,inject:sessionId=>({sessionId})}, SessionDirectoryButton));
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'dsh-workdock-session-directory-dialog',order:24}, SessionDirectoryOverlay));
+        ctx.slots.inject('conversation.chat.assistant-actions', () => ctx.slots.register({name:'conversation.chat.assistant-actions',id:'dsh-workdock-save-reply',order:20,inject:sessionId=>({sessionId,chatSource:replySource(sessionId)})}, SaveReply));
         ctx.slots.inject('conversation.chat.turnTail', () => ctx.slots.register({name:'conversation.chat.turnTail',id:'dsh-workdock-hide-turn',order:90}, HideTurn));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-restore-turns',order:11,inject:sessionId=>({sessionId})}, RestoreHiddenTurns));
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({name:'conversation.composer.dock',id:'dsh-workdock-dock',order:10,inject:sessionId=>({sessionId,dock:true})}, Manager));

@@ -88,15 +88,24 @@ test('official session menu captures a noncurrent session and preserves native c
  }finally{await app.close();}
 });
 
-test('dialog traps Tab, confirms dirty Escape/backdrop exits and restores trigger focus',async()=>{
+test('dialog traps Tab and discards directory edits without confirmation on every close path',async()=>{
  const app=await harness();try{
   const trigger=document.querySelector('#dock button');trigger.focus();await app.click(trigger);const dialog=document.querySelector('[role=dialog]');assert.equal(document.activeElement,dialog);
   assert.equal((await app.key('Tab')).defaultPrevented,true);assert.equal(document.activeElement,dialog.querySelector('button'));
   await app.key('Tab',{shiftKey:true});assert.equal(document.activeElement,dialog.querySelector('.dpm-cancel'),'disabled Save is excluded from focus loop');
-  await app.click('input[value=custom]');const before=app.confirmations;await app.key('Escape');assert.ok(document.querySelector('[role=dialog]'));assert.equal(app.confirmations,before+1);
-  await app.click('.dpm-backdrop');assert.ok(document.querySelector('[role=dialog]'));assert.equal(app.confirmations,before+2);
-  const unload=new app.dom.window.Event('beforeunload',{cancelable:true});app.dom.window.dispatchEvent(unload);assert.equal(unload.defaultPrevented,true);
-  app.confirm=true;await app.key('Escape');assert.equal(document.querySelector('[role=dialog]'),null);assert.equal(document.activeElement,trigger);
+  for(const exit of ['cancel','escape','backdrop','close']){
+   if(exit!=='cancel')await app.click(trigger);
+   assert.equal(document.querySelector('input[value=follow]').checked,true,'reopening discards the unsaved mode');
+   await app.click('input[value=custom]');
+   if(exit==='cancel')await app.button('Cancel');
+   else if(exit==='escape')await app.key('Escape');
+   else if(exit==='backdrop')await app.click('.dpm-backdrop');
+   else await app.click('button[aria-label="Close"]');
+   assert.equal(document.querySelector('[role=dialog]'),null);assert.equal(document.activeElement,trigger);
+   assert.equal(app.confirmations,0,'closing never asks for confirmation');
+   assert.equal(app.calls.filter(c=>c.args.action==='set_session_directory').length,0,'cancel does not persist edits');
+   const unload=new app.dom.window.Event('beforeunload',{cancelable:true});app.dom.window.dispatchEvent(unload);assert.equal(unload.defaultPrevented,false,'closed drafts do not prevent navigation');
+  }
  }finally{await app.close();}
 });
 

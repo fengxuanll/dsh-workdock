@@ -3,12 +3,13 @@ import { defineTool } from '@deepseek-ai/dsh-tools';
 import { z } from 'zod';
 import { ProjectManager, projectContext, LABEL_COLORS, HEX_COLOR } from '../core.js';
 import { openDirectory } from '../folder-opener.js';
+import { favoriteSchema, favoriteActions, favoriteInput, operateFavorite, FAVORITE_CONTENT_BYTES } from '../favorites.js';
 
 export const inject = ['storageDomain', 'commands', 'tools', 'systemPrompt', 'workspaceRegistry', 'connection', 'agents'];
 const project = z.object({ id: z.string(), title: z.string(), folders: z.array(z.string()).min(1), primary: z.string(), sessionRoots: z.array(z.string()), pinned: z.boolean(), revision: z.number(), lastUsedAt: z.number().nonnegative().optional() });
 const labelColor = z.union([z.enum(LABEL_COLORS), z.string().length(7).regex(HEX_COLOR)]);
 const spec = defineDomain({ name: 'dsh_project_manager', version: 1, tables: {}, global: {
-  schema: z.object({ projects: z.array(project), bindings: z.record(z.string(), z.string()), colors: z.record(z.string(), labelColor).optional(), sessionDirectories: z.record(z.string(), z.object({ path: z.string().nullable(), revision: z.number().int().nonnegative() })).optional() }),
+  schema: z.object({ favorites: z.array(favoriteSchema).optional(), projects: z.array(project), bindings: z.record(z.string(), z.string()), colors: z.record(z.string(), labelColor).optional(), sessionDirectories: z.record(z.string(), z.object({ path: z.string().nullable(), revision: z.number().int().nonnegative() })).optional() }),
   initial: { projects: [], bindings: {} }
 } });
 
@@ -74,6 +75,8 @@ export async function apply(ctx) {
     await initialize(agent);
     const changesDirectory = ['save', 'bind', 'remove', 'set_session_directory'].includes(args.action);
     const result = await manager.execute(args, agent?.session, changesDirectory && agent ? directoryApplier(agent, signal) : undefined);
+    // Favorites are owner-UI data, not implicit project_manager/model context.
+    if (args.action === 'list') delete result.favorites;
     const warning = agent && inheritanceWarnings.get(agent.session.header.id ?? agent.session.id);
     if (warning) result.inheritanceWarnings = [warning];
     if (args.action === 'list' || args.action === 'save' || args.action === 'bind') {
@@ -112,7 +115,8 @@ export async function apply(ctx) {
   const apiSchema = z.object({
     sessionId:z.string().min(1).max(500).optional(),
     args:z.object({
-      action:z.enum(['list','save','bind','remove','pin','open_folder','check_directories','touch','set_color','get_session_directory','set_session_directory']),
+      action:z.enum(['list','save','bind','remove','pin','open_folder','check_directories','touch','set_color','get_session_directory','set_session_directory', ...favoriteActions]),
+      ...favoriteInput,
        path:z.string().max(32768).nullable().optional(), directoryRevision:z.number().int().nonnegative().optional(),
        directoryPolicy:z.enum(['keep','follow']).optional(),
       target:z.enum(['project','workspace','session']).optional(),color:labelColor.nullable().optional(),
@@ -130,10 +134,21 @@ export async function apply(ctx) {
       try {
         if(request.signal.aborted)return json(499,{ok:false,error:'请求已取消'});
         const text=await request.text();
-        if(text.length>131072)return json(413,{ok:false,error:'项目配置过大'});
+        // JSON escaping can expand a valid 1 MiB snapshot sixfold.
+        if(text.length>6*FAVORITE_CONTENT_BYTES+32768)return json(413,{ok:false,error:'请求过大'});
+        let raw;
+        try { raw=JSON.parse(text); }
+        catch { return json(text.length>131072?413:400,{ok:false,error:'项目管理请求参数无效'}); }
+        if(raw?.args?.action!=='favorite_save' && text.length>131072)return json(413,{ok:false,error:'项目配置过大'});
         let payload;
-        try{payload=apiSchema.parse(JSON.parse(text));}catch{return json(400,{ok:false,error:'项目管理请求参数无效'});}
+        try{payload=apiSchema.parse(raw);}catch{return json(400,{ok:false,error:'项目管理请求参数无效'});}
         const agent=payload.sessionId?ctx.agents.get(payload.sessionId):undefined;
+        // Owner-only favorites do not mutate live session state or require idle
+        // agents. Only saving a source snapshot needs a verified live session.
+        if (favoriteActions.includes(payload.args.action)) {
+          if (payload.args.action==='favorite_save' && (!payload.sessionId || !agent || (agent.session.header.id ?? agent.session.id)!==payload.sessionId)) return json(409,{ok:false,error:'当前聊天尚未就绪，请打开聊天后重试'});
+          return json(200,{ok:true,value:await operateFavorite(manager,payload.args,agent?.session)});
+        }
         if ((payload.sessionId && (!agent || (agent.session.header.id ?? agent.session.id) !== payload.sessionId)) || (!agent && ['save','bind','get_session_directory','set_session_directory'].includes(payload.args.action))) return json(409,{ok:false,error:'当前聊天尚未就绪，请打开聊天后重试'});
         const mutation = ['save','bind','remove','set_session_directory'].includes(payload.args.action);
         let value;
@@ -146,7 +161,7 @@ export async function apply(ctx) {
           }
         } else value=await perform(payload.args,agent,request.signal);
         return json(200,{ok:true,value});
-      }catch(error){return json(400,{ok:false,error:error.message});}
+      }catch(error){return json(error.status ?? 400,{ok:false,error:error.message});}
     },
   }));
   // Explicitly typed slash commands retain their normal visible command result.
