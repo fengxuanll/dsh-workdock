@@ -352,7 +352,6 @@ window.__ModuleLoader__.load({
             throw error;
           }finally{treeOrderBusy=false;reconcileTreePins();}
         }
-        let allowNativeMenu = false;
         ctx.effect(() => {
           // Native HoverCard owns an outer span and renders its card in a portal.
           // Capture both the span and the row; a delayed card that was already
@@ -424,7 +423,7 @@ window.__ModuleLoader__.load({
           }
           function onMenuPointer(event) {
             if (event.button === 0 && addWorkspaceButton(event.target)) { event.stopPropagation(); return; }
-            if (!allowNativeMenu && event.button === 0 && menuButtonRow(event.target)) event.stopPropagation();
+            if (event.button === 0 && menuButtonRow(event.target)) event.stopPropagation();
           }
           function onMenuClick(event) {
             if (addWorkspaceButton(event.target)) {
@@ -432,7 +431,6 @@ window.__ModuleLoader__.load({
               publishTree({ manage: true, add: true, sequence: ++requestSequence });
               return;
             }
-            if (allowNativeMenu) return;
             const row = menuButtonRow(event.target);
             if (!row) return;
             showTreeMenu(event, row, true);
@@ -443,7 +441,8 @@ window.__ModuleLoader__.load({
             if (!workspace) return;
             event.preventDefault(); event.stopPropagation();
             const rect = (ellipsis ? row.querySelector('button') : row).getBoundingClientRect();
-            publishTree({ workspace, sequence: ++requestSequence, trigger: row, ellipsis,
+            const displayTitle=row.querySelector('[class*="_projectText"] [class*="_title"]')?.textContent?.trim()||workspace.title;
+            publishTree({ workspace, displayTitle, sequence: ++requestSequence, trigger: row, ellipsis,
               nativeMenu: row.querySelector('button:not(.dpm-sidebar-color)'),
               x: ellipsis ? rect.left : event.clientX || rect.left + 20,
               y: ellipsis ? rect.bottom : event.clientY || rect.bottom });
@@ -1063,11 +1062,16 @@ window.__ModuleLoader__.load({
                 closeMenu();return;
               }
               if (kind === 'more') {
-                if (!target.nativeMenu?.isConnected) throw new Error(t('nativeUnavailable'));
-                closeMenu();
-                allowNativeMenu = true;
-                try { target.nativeMenu.click(); } finally { allowNativeMenu = false; }
-                return;
+                const nativeMenus=ctx.contextMenus;
+                if(typeof nativeMenus?.open!=='function'||typeof nativeMenus?.close!=='function')throw new Error(t('nativeUnavailable'));
+                // A native ellipsis is a toggle, not an open command. Use the
+                // captured target directly and discard any previous occurrence.
+                nativeMenus.close();
+                if(target.trigger?.isConnected)target.trigger.focus({preventScroll:true});
+                else document.activeElement?.blur?.();
+                nativeMenus.open({kind:'workspace',value:{workspaceId:workspace.workspaceId,path:workspace.path,displayTitle:target.displayTitle||workspace.title}}, {x:position.left,y:position.top});
+                // Keep this menu (and its error surface) until open is accepted.
+                closeMenu();return;
               }
               if (kind === 'openFolder') {
                 await call(undefined,{action:'open_folder',workspaceId:workspace.workspaceId});
@@ -1105,7 +1109,7 @@ window.__ModuleLoader__.load({
           if (!request) return null;
           if (request.manage) return h(Manager,{key:request.sequence,sessionId:request.sessionId,initialProject:request.add?{title:'',folders:[],primary:''}:request.project??null,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
           if (editor) return h(Manager,{key:request.sequence,...editor,initialProject:editor.project,initialOpen:true,hiddenLauncher:true,onClose:closeMenu});
-          const item = (key,label=key) => h('button',{key,type:'button',role:'menuitem',disabled:busy,onClick:()=>run(key),className:key==='remove'?'dpm-danger':undefined},t(label));
+          const item = (key,label=key) => h('button',{key,type:'button',role:'menuitem',disabled:busy,onClick:event=>{if(key==='more'){event.preventDefault();event.stopPropagation();}run(key);},className:key==='remove'?'dpm-danger':undefined},t(label));
           return h('div',{className:'dpm'},h('style',null,css),h('div',{ref:menu,className:'dpm-menu',role:'menu','aria-label':t('title'),style:position,onKeyDown:keyboard},
             h('div',{className:'dpm-menu-title'},request.workspace.title),
             item('edit'),item('pin',pins.includes(request.workspace.workspaceId)?'unpin':'pin'),item('openFolder'),item('copy'),item('newChat'),

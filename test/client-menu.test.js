@@ -29,6 +29,7 @@ test('left project tree context menu targets workspace, edits directories and di
     sessions:{list:{subscribe:()=>()=>{},getSnapshot:()=>({byId})},create:async options=>{created.push(options);return 'new-session';}},
     workspaces:{list:{getSnapshot:()=>({items:[workspace]})},rename:async(...args)=>{renames.push(args);},delete:async()=>{},create:async()=>workspace},
     uiWorkspace:{openSession:id=>opens.push(id),startSession:()=>{}},
+    contextMenus:{register:()=>()=>{}},
     remote:{directoryPicker:{pick:async()=>({ok:true,value:'D:/extra-reference'})},commands:{execute(){throw Error('UI must not execute visible slash commands');}}},effect(fn){disposers.push(fn());},
   };
   dom.window.fetch=async(url,options)=>{
@@ -177,10 +178,72 @@ test('left project tree context menu targets workspace, edits directories and di
     await click('在资源管理器中打开');
     assert.ok(calls.some(call=>call.args.action==='open_folder'&&call.args.workspaceId==='w1'));
     assert.equal(document.querySelector('[role=menu]'),null);
-    // Native pin actions retain their existing host implementation.
-    let nativeClicks=0;document.getElementById('native-menu').onclick=()=>nativeClicks++;
-    await act(async()=>context('#project-label'));
-    await click('更多…');assert.equal(nativeClicks,1);
+    // More must open a fresh captured target through the menu service, not toggle
+    // a DOM trigger whose host opener state may still refer to an older popup.
+    let nativeClicks=0,activeNativeTarget=null,failNativeOpen=false,expectedDisplayTitle='Project one';
+    const nativeAPIEvents=[],nativeTargets=[];
+    const nativeTrigger=document.getElementById('native-menu');
+    const nativePopup=document.createElement('div');nativePopup.id='native-popup';nativePopup.setAttribute('role','menu');
+    const nativeAction=document.createElement('button');nativeAction.textContent='Native action';nativePopup.append(nativeAction);
+    const nativeOutside=e=>{if(nativePopup.isConnected&&e.target!==nativeTrigger&&!nativePopup.contains(e.target)){nativePopup.remove();activeNativeTarget=null;}};
+    nativeTrigger.onclick=()=>{nativeClicks++;if(activeNativeTarget){nativePopup.remove();activeNativeTarget=null;}else document.body.append(nativePopup);};
+    ctx.contextMenus.close=()=>{nativeAPIEvents.push('close');nativePopup.remove();activeNativeTarget=null;};
+    ctx.contextMenus.open=(target,point)=>{
+      nativeAPIEvents.push('open');
+      if(failNativeOpen)throw Error('Native menu failed');
+      assert.equal(activeNativeTarget,null,'clear the old occurrence before opening; do not toggle it');
+      assert.equal(document.activeElement.getAttribute('data-row-key'),'workspace:w1','return focus belongs to the stable workspace row, not the unmounting More button');
+      assert.deepEqual(JSON.parse(JSON.stringify(target)),{kind:'workspace',value:{workspaceId:'w1',path:'D:/main',displayTitle:expectedDisplayTitle}});
+      assert.ok(Number.isFinite(point.x)&&Number.isFinite(point.y));
+      nativeTargets.push(target);activeNativeTarget=target;document.body.append(nativePopup);
+    };
+    document.addEventListener('click',nativeOutside);
+    try{
+      for(const mode of ['mouse','keyboard']){
+        await act(async()=>mode==='mouse'?context('#project-label'):nativeTrigger.click());
+        const more=[...document.querySelectorAll('[role=menuitem]')].find(b=>b.textContent==='更多…');assert.ok(more);
+        activeNativeTarget={kind:'workspace',value:{workspaceId:'w1'}};
+        await act(async()=>{
+          if(mode==='mouse'){
+            const label=document.createElement('span');label.textContent=more.textContent;more.replaceChildren(label);
+            label.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));
+          }else{more.focus();more.click();}
+        });
+        assert.ok(nativePopup.isConnected,'native popup remains after the opening gesture finishes');
+        assert.equal(document.querySelector('.dpm-menu'),null,'plugin menu closes during handoff');
+        await act(async()=>nativeAction.click());assert.ok(nativePopup.isConnected,'inside native popup does not dismiss');
+        await act(async()=>document.body.click());assert.equal(nativePopup.isConnected,false,'subsequent outside click still dismisses');
+      }
+      assert.equal(nativeClicks,0,'never simulate a click on the host toggle');
+      assert.equal(nativeTargets.length,2,'both mouse and keyboard open the captured workspace');
+      assert.deepEqual(nativeAPIEvents,['close','open','close','open']);
+      // Match the native visible label even when it differs from stored title.
+      const label=document.getElementById('project-label'),projectText=document.createElement('span');
+      projectText.className='native_projectText';label.className='native_title';label.before(projectText);projectText.append(label);
+      label.textContent=expectedDisplayTitle='本地项目显示名称';
+      // Missing/replaced row buttons cannot break a service-based handoff.
+      nativeTrigger.remove();
+      await act(async()=>context('#project-label'));
+      await click('更多…');assert.ok(nativePopup.isConnected);nativeOutside({target:document.body});
+      // A service failure must leave an error surface and allow an explicit retry.
+      failNativeOpen=true;
+      await act(async()=>context('#project-label'));await click('更多…');
+      assert.match(document.querySelector('.dpm-menu [role=alert]').textContent,/Native menu failed/);
+      failNativeOpen=false;await click('更多…');assert.ok(nativePopup.isConnected);
+      nativeOutside({target:document.body});
+      const openNative=ctx.contextMenus.open;ctx.contextMenus.open=undefined;
+      await act(async()=>context('#project-label'));await click('更多…');
+      assert.ok(document.querySelector('.dpm-menu [role=alert]'),'missing service reports failure, never a silent DOM fallback');
+      ctx.contextMenus.open=openNative;await click('更多…');assert.ok(nativePopup.isConnected);
+      nativeOutside({target:document.body});
+      const closeNative=ctx.contextMenus.close;ctx.contextMenus.close=undefined;
+      await act(async()=>context('#project-label'));await click('更多…');
+      assert.ok(document.querySelector('.dpm-menu [role=alert]'),'an API without close cannot safely reset a previous native occurrence');
+      ctx.contextMenus.close=closeNative;await click('更多…');assert.ok(nativePopup.isConnected);
+      nativeOutside({target:document.body});
+      label.textContent='Project one';
+      document.querySelector('[data-row-key="workspace:w1"]').prepend(nativeTrigger);
+    }finally{document.removeEventListener('click',nativeOutside);nativePopup.remove();}
     // Explicit editing may create a workspace chat; passive management must not.
     byId={};sessionsSnapshot={byId};
     await act(async()=>context('#project-label'));
@@ -235,7 +298,7 @@ test('left project tree context menu targets workspace, edits directories and di
     addWorkspace.dispatchEvent(new dom.window.MouseEvent('pointerdown',{button:0,bubbles:true}));
     assert.equal(nativeAddClicks,1);assert.equal(nativeAddPointers,1);
   }finally{
-    await act(async()=>root.unmount());
+    await act(async()=>{for(const dispose of disposers.splice(0))await dispose?.();root.unmount();});
     dom.window.close();
     for(const [key,value]of Object.entries(previous)) {if(value===undefined)delete globalThis[key];else globalThis[key]=value;}
   }
